@@ -1,0 +1,65 @@
+// ==========================================================================
+// Trip Total Sticky Footer Component
+// ==========================================================================
+
+@use '../abstracts' as *;
+
+.trip-total {
+  position: fixed;
+  bottom: 30px;
+  // Default positioning for Desktop layout (Left Sidebar + Right Main)
+  left: calc(50px + #{$sidebar-width} + 50px);
+  width: calc(100vw - 656px); // 100vw - (left_padding + sidebar + gap + right_padding)
+  max-width: $form-width;
+  
+  background-color: $color-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  padding: $spacing-xl $spacing-lg;
+  z-index: $z-index-sticky;
+  @include flex-column;
+  align-items: flex-end;
+  
+  // Tablet/Mobile positioning (Centered Column)
+  @media (max-width: 1280px) {
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 60px);
+    max-width: $form-width;
+  }
+  
+  &__content {
+    @include flex-column;
+    gap: $spacing-sm;
+    width: 100%;
+  }
+  
+  &__header {
+    @include flex-between;
+    width: 100%;
+    color: $color-red-brown;
+  }
+  
+  &__label {
+    @include font-primary($font-weight-bold);
+    font-size: $font-size-md;
+    line-height: $line-height-tight;
+  }
+  
+  &__price {
+    @include font-secondary($font-weight-bold);
+    font-size: $font-size-lg;
+    line-height: $line-height-tight;
+  }
+  
+  &__note {
+    @include font-primary($font-weight-medium);
+    font-size: $font-size-base;
+    line-height: $line-height-tight;
+    color: $color-red-brown;
+  }
+  
+  &__action {
+    margin-top: $spacing-base;
+  }
+}

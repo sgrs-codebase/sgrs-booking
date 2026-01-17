@@ -1,0 +1,249 @@
+// ==========================================================================
+// SAIGON RIVER STAR - Mixins
+// ==========================================================================
+
+@use 'variables' as *;
+
+// --------------------------------------------------------------------------
+// Typography Mixins
+// --------------------------------------------------------------------------
+
+@mixin font-primary($weight: $font-weight-medium) {
+  font-family: $font-primary;
+  font-weight: $weight;
+  font-style: normal;
+}
+
+@mixin font-secondary($weight: $font-weight-regular, $style: normal) {
+  font-family: $font-secondary;
+  font-weight: $weight;
+  font-style: $style;
+}
+
+@mixin font-tertiary($weight: $font-weight-regular) {
+  font-family: $font-tertiary;
+  font-weight: $weight;
+  font-style: normal;
+}
+
+@mixin text-heading($size: $font-size-lg) {
+  @include font-secondary($font-weight-regular, italic);
+  font-size: $size;
+  line-height: $line-height-tight;
+  color: $color-red-brown;
+}
+
+@mixin text-subheading {
+  @include font-primary($font-weight-medium);
+  font-size: $font-size-md;
+  line-height: $line-height-tight;
+  color: $color-red-brown;
+}
+
+@mixin text-body {
+  @include font-primary($font-weight-medium);
+  font-size: $font-size-base;
+  line-height: $line-height-tight;
+  color: $color-red-brown;
+}
+
+@mixin text-annotation {
+  @include font-primary($font-weight-medium);
+  font-size: $font-size-xs;
+  font-style: italic;
+  line-height: $line-height-tight;
+  color: $color-red-brown;
+  opacity: 0.5;
+}
+
+@mixin text-small {
+  @include font-primary($font-weight-medium);
+  font-size: $font-size-sm;
+  line-height: $line-height-tight;
+  color: $color-red-brown;
+}
+
+// --------------------------------------------------------------------------
+// Layout Mixins
+// --------------------------------------------------------------------------
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+@mixin absolute-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+@mixin absolute-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@mixin absolute-center-y {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+// --------------------------------------------------------------------------
+// Button Mixins
+// --------------------------------------------------------------------------
+
+@mixin button-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all $transition-base;
+  
+  &:hover {
+    opacity: 0.9;
+  }
+  
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+@mixin button-primary {
+  @include button-base;
+  @include font-primary($font-weight-medium);
+  background-color: $color-red-brown;
+  color: $color-white;
+  font-size: $font-size-md;
+  padding: $spacing-md $spacing-xl;
+  border-radius: $radius-full;
+  gap: $spacing-sm;
+}
+
+@mixin button-gradient {
+  @include button-base;
+  @include font-tertiary($font-weight-regular);
+  background: $gradient-primary;
+  color: $color-beige;
+  font-size: $font-size-md;
+  padding: $spacing-md $spacing-lg;
+  border-radius: $radius-xl;
+  gap: $spacing-sm;
+  line-height: 26px;
+}
+
+// --------------------------------------------------------------------------
+// Input Mixins
+// --------------------------------------------------------------------------
+
+@mixin input-base {
+  @include font-primary($font-weight-medium);
+  width: 100%;
+  border: 1px solid $color-red-brown;
+  border-radius: $radius-pill;
+  padding: $spacing-base $spacing-xl;
+  font-size: $font-size-base;
+  color: $color-red-brown;
+  background-color: transparent;
+  outline: none;
+  transition: border-color $transition-fast;
+  
+  &::placeholder {
+    @include text-annotation;
+  }
+  
+  &:focus {
+    border-width: 2px;
+  }
+}
+
+@mixin input-date {
+  @include input-base;
+  font-size: $font-size-md;
+  border-width: 2px;
+  padding: $spacing-xs 50px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+}
+
+// --------------------------------------------------------------------------
+// Card Mixins
+// --------------------------------------------------------------------------
+
+@mixin card-base {
+  background-color: $color-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+}
+
+@mixin card-section {
+  background-color: $color-white;
+  border-radius: $radius-lg;
+  padding: $spacing-xl $spacing-lg;
+}
+
+// --------------------------------------------------------------------------
+// Utility Mixins
+// --------------------------------------------------------------------------
+
+@mixin visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@mixin scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@mixin image-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+// --------------------------------------------------------------------------
+// Responsive Mixins
+// --------------------------------------------------------------------------
+
+@mixin respond-to($breakpoint) {
+  @if $breakpoint == 'sm' {
+    @media (max-width: 640px) { @content; }
+  } @else if $breakpoint == 'md' {
+    @media (max-width: 768px) { @content; }
+  } @else if $breakpoint == 'lg' {
+    @media (max-width: 1024px) { @content; }
+  } @else if $breakpoint == 'xl' {
+    @media (max-width: 1280px) { @content; }
+  }
+}

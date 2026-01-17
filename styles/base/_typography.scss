@@ -1,0 +1,61 @@
+// ==========================================================================
+// Typography Base Styles
+// ==========================================================================
+
+@use '../abstracts' as *;
+
+body {
+  @include font-primary($font-weight-medium);
+  font-size: $font-size-base;
+  line-height: $line-height-tight;
+  color: $color-red-brown;
+}
+
+// Heading Styles
+.heading-1 {
+  @include text-heading($font-size-xl);
+}
+
+.heading-2 {
+  @include font-secondary($font-weight-bold);
+  font-size: $font-size-lg;
+  line-height: $line-height-tight;
+  color: $color-red-brown;
+}
+
+.heading-3 {
+  @include font-primary($font-weight-bold);
+  font-size: $font-size-md;
+  line-height: $line-height-tight;
+  color: $color-red-brown;
+}
+
+// Text Styles
+.text-subheading {
+  @include text-subheading;
+}
+
+.text-body {
+  @include text-body;
+}
+
+.text-annotation {
+  @include text-annotation;
+}
+
+.text-small {
+  @include text-small;
+}
+
+// Text Utilities
+.text-italic {
+  font-style: italic;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-white {
+  color: $color-white;
+}

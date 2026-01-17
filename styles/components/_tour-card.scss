@@ -1,0 +1,159 @@
+// ==========================================================================
+// Tour Card Component Styles (Left Sidebar)
+// ==========================================================================
+
+@use '../abstracts' as *;
+
+.tour-card {
+  @include card-base;
+  width: $sidebar-width;
+  height: 670px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  @include scrollbar-hidden;
+  position: relative;
+  
+  &__content {
+    @include flex-column;
+    gap: 27px;
+    align-items: center;
+    padding: $spacing-lg 0;
+    width: 466px;
+    margin: 0 auto;
+  }
+  
+  &__image {
+    width: 100%;
+    height: 262px;
+    border-radius: $radius-lg;
+    overflow: hidden;
+    flex-shrink: 0;
+    
+    img {
+      @include image-cover;
+      border-radius: $radius-lg;
+      pointer-events: none;
+    }
+  }
+  
+  &__info-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  &__info {
+      @include flex-column;
+      gap: $spacing-md;
+      width: 416px;
+      color: $color-red-brown;
+    }
+    
+    &__title {
+      @include font-secondary($font-weight-regular, italic);
+      font-size: $font-size-xl;
+      line-height: $line-height-tight;
+    }
+    
+    &__subtitle {
+      @include font-primary($font-weight-medium);
+      font-size: $font-size-base;
+      font-style: italic;
+      line-height: $line-height-tight;
+    }
+    
+    &__meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 416px;
+      margin-top: $spacing-md;
+      padding-bottom: $spacing-lg;
+      border-bottom: 2px solid $color-red-brown;
+      
+      &-item {
+        @include text-body;
+      }
+    }
+    
+    &__accordion {
+      width: 416px;
+    }
+}
+
+// Accordion Item Styles
+.accordion-item {
+  width: 100%;
+  
+  &__header {
+    @include flex-between;
+    padding: $spacing-lg 0;
+    cursor: pointer;
+    width: 100%;
+    
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+  
+  &__title {
+    @include text-body;
+    text-align: left;
+  }
+  
+  &__icon {
+    width: 27px;
+    height: 5px;
+    position: relative;
+    flex-shrink: 0;
+    
+    svg, img {
+      position: absolute;
+      top: -6.5px;
+      left: 4.5px;
+      width: 18px;
+      height: 18px;
+      transition: transform $transition-base;
+    }
+  }
+  
+  &__divider {
+    height: 1px;
+    width: 100%;
+    background-color: $color-red-brown;
+  }
+  
+  &__content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height $transition-base;
+    
+    &--open {
+      max-height: 500px;
+    }
+  }
+  
+  &__body {
+    padding: $spacing-lg 0;
+    @include text-body;
+    
+    ul {
+      @include flex-column;
+      gap: $spacing-sm;
+      
+      li {
+        padding-left: $spacing-lg;
+        position: relative;
+        
+        &::before {
+          content: '•';
+          position: absolute;
+          left: 0;
+          color: $color-red-brown;
+        }
+      }
+    }
+  }
+}

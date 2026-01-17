@@ -1,0 +1,51 @@
+// ==========================================================================
+// Navbar Component Styles
+// ==========================================================================
+
+@use '../abstracts' as *;
+
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: $z-index-navbar;
+  background-color: $color-white;
+  box-shadow: $shadow-navbar;
+  padding: $spacing-base $spacing-3xl;
+  @include flex-between;
+  
+  &__logo {
+    display: block;
+    height: 50px;
+    width: auto;
+    flex-shrink: 0;
+    
+    img {
+      height: 100%;
+      width: auto;
+    }
+  }
+  
+  &__nav {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xl;
+  }
+  
+  &__link {
+    @include font-tertiary($font-weight-regular);
+    font-size: $font-size-md;
+    line-height: 26px;
+    color: $color-red-brown-dark;
+    transition: opacity $transition-fast;
+    
+    &:hover {
+      opacity: 0.7;
+    }
+  }
+  
+  &__cta {
+    @include button-gradient;
+  }
+}

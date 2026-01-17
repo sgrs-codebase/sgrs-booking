@@ -1,0 +1,815 @@
+// ==========================================================================
+// Booking Form Component Styles
+// ==========================================================================
+
+@use '../abstracts' as *;
+
+.booking-form {
+  @include flex-column;
+  gap: $spacing-2xl;
+  width: $form-width;
+  padding-bottom: 200px; // Space for sticky footer
+  
+  &__section {
+    @include flex-column;
+    gap: $spacing-xl;
+    width: 100%;
+  }
+  
+  &__notice {
+    @include font-primary($font-weight-medium);
+    font-size: $font-size-base;
+    font-style: italic;
+    line-height: $line-height-tight;
+    color: $color-red-brown;
+    text-align: center;
+    width: 100%;
+  }
+  
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+  }
+}
+
+// Guest Form Card
+.guest-form {
+  @include card-section;
+  @include flex-column;
+  gap: $spacing-xl;
+  width: 100%;
+  
+  &__header {
+    @include flex-column;
+    gap: $spacing-md;
+    color: $color-red-brown;
+  }
+  
+  &__title {
+    @include font-primary($font-weight-bold);
+    font-size: $font-size-md;
+    line-height: $line-height-tight;
+  }
+  
+  &__description {
+    @include font-primary($font-weight-medium);
+    font-size: $font-size-base;
+    line-height: $line-height-tight;
+  }
+  
+  &__fields {
+    @include flex-column;
+    gap: $spacing-lg;
+    width: 100%;
+  }
+  
+  &__row {
+    display: flex;
+    gap: $spacing-xl;
+    width: 100%;
+    
+    &--full {
+      .form-field {
+        flex: 1;
+      }
+    }
+    
+    &--thirds {
+      .form-field {
+        flex: 1;
+        min-width: 0;
+      }
+    }
+  }
+}
+
+// Form Field Styles
+.form-field {
+  @include flex-column;
+  gap: $spacing-base;
+  flex: 1;
+  min-width: 0;
+  
+  &__label {
+    @include font-primary($font-weight-medium);
+    font-size: $font-size-base;
+    line-height: $line-height-tight;
+    color: $color-red-brown;
+  }
+  
+  &__input-wrapper {
+    position: relative;
+    width: 100%;
+  }
+  
+  &__input {
+    @include input-base;
+    height: 36px;
+    padding: 0 20px;
+    
+    &--date {
+      padding-right: 50px;
+      
+      // Remove default calendar icon in WebKit browsers
+      &::-webkit-calendar-picker-indicator {
+        display: none;
+        -webkit-appearance: none;
+      }
+    }
+  }
+  
+  &__select {
+    @include input-base;
+    height: 36px;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%2356231E' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 20px center;
+    cursor: pointer;
+    padding: 0 20px;
+    
+    &:focus {
+      border-width: 2px;
+    }
+  }
+  
+  &__icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    @include flex-center;
+    background-color: $color-grey;
+    border-radius: 50%;
+    cursor: pointer;
+    
+    svg, img {
+      width: 18.6px;
+      height: 18.6px;
+    }
+  }
+  
+  // Phone input with country code
+  &--phone {
+    .form-field__input-wrapper {
+      position: relative;
+    }
+    
+    .form-field__input {
+      padding-left: 100px;
+    }
+    
+    .form-field__country-code {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 85px;
+      background-color: $color-grey;
+      @include flex-center;
+      gap: $spacing-sm;
+      border-top-left-radius: $radius-pill;
+      border-bottom-left-radius: $radius-pill;
+      
+      .flag {
+        width: 30px;
+        height: 20px;
+        background-color: $color-white;
+        border: 0.5px solid $color-grey-blue;
+        box-shadow: $shadow-dropdown;
+        overflow: hidden;
+        
+        img {
+          @include image-cover;
+        }
+      }
+    }
+  }
+}
+
+// Date & Time Section (Step 1)
+.date-time-section {
+  @include flex-column;
+  gap: $spacing-xl;
+  align-items: flex-end;
+  width: 100%;
+  
+  &__picker {
+    @include flex-column;
+    gap: $spacing-base;
+    width: 100%;
+  }
+  
+  &__label {
+    @include text-subheading;
+  }
+  
+  &__input-wrapper {
+    position: relative;
+    width: 100%;
+    
+    input {
+      @include input-date;
+      width: 100%;
+      cursor: pointer;
+      
+      &:read-only {
+        background-color: $color-white;
+      }
+
+      &:disabled {
+        background-color: $color-grey;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  // New styles for date range
+  &__range-wrapper {
+    display: flex;
+    gap: $spacing-lg;
+    width: 100%;
+    
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: $spacing-md;
+    }
+  }
+
+  &__input-group {
+    flex: 1;
+    @include flex-column;
+    gap: $spacing-xs;
+  }
+
+  &__sublabel {
+    @include font-primary($font-weight-medium);
+    font-size: $font-size-sm;
+    color: rgba($color-red-brown, 0.7);
+  }
+  
+  &__icon {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    height: 48px;
+    @include flex-center;
+    pointer-events: none;
+    
+    .icon-container {
+      @include flex-center;
+      background-color: $color-grey;
+      border-radius: 999px;
+      padding: $spacing-sm;
+      
+      svg, img {
+        width: 24px;
+        height: 24px;
+      }
+    }
+  }
+}
+
+// Date Picker Modal
+.date-picker-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: $z-index-modal;
+  background-color: $color-white;
+  border-radius: $spacing-lg;
+  box-shadow: $shadow-card;
+  max-width: 784px;
+  width: 90%;
+  max-height: 90vh;
+  overflow: hidden;
+  
+  &__header {
+    @include flex-between;
+    gap: $spacing-sm;
+    padding: $spacing-lg $spacing-lg $spacing-xl $spacing-lg;
+    border-bottom: 1px solid $color-red-brown;
+  }
+  
+  &__header-content {
+    @include flex-column;
+    gap: $spacing-lg;
+    flex: 1;
+  }
+  
+  &__label {
+    @include font-primary($font-weight-medium);
+    font-size: $font-size-base;
+    color: rgba($color-red-brown, 0.7);
+    line-height: $line-height-tight;
+  }
+  
+  &__selected-date {
+    @include text-subheading;
+  }
+  
+  &__close-btn {
+    @include flex-center;
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
+    background-color: transparent;
+    cursor: pointer;
+    transition: background-color $transition-fast;
+    
+    &:hover {
+      background-color: rgba($color-red-brown, 0.05);
+    }
+  }
+  
+  &__month-selector {
+    @include flex-between;
+    padding: $spacing-xs $spacing-md;
+  }
+  
+  &__month-btn {
+    @include flex-center;
+    gap: $spacing-sm;
+    padding: $spacing-sm $spacing-sm $spacing-sm $spacing-md;
+    border-radius: 999px;
+    background-color: transparent;
+    cursor: pointer;
+    transition: background-color $transition-fast;
+    
+    &:hover {
+      background-color: rgba($color-red-brown, 0.05);
+    }
+    
+    span {
+      @include font-primary($font-weight-medium);
+      font-size: $font-size-base;
+      color: rgba($color-red-brown, 0.7);
+      line-height: $line-height-tight;
+    }
+  }
+  
+  &__month-controls {
+    display: flex;
+    gap: 0;
+  }
+  
+  &__nav-btn {
+    @include flex-center;
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
+    background-color: transparent;
+    cursor: pointer;
+    transition: background-color $transition-fast;
+    
+    &:hover {
+      background-color: rgba($color-red-brown, 0.05);
+    }
+  }
+  
+  &__calendar {
+    padding: 0 $spacing-md;
+  }
+  
+  &__weekdays {
+    display: flex;
+    height: 48px;
+    align-items: center;
+    justify-content: center;
+    
+    > div {
+      flex: 1;
+      @include flex-center;
+      @include font-primary($font-weight-bold);
+      font-size: $font-size-base;
+      color: $color-red-brown;
+      line-height: $line-height-tight;
+    }
+  }
+  
+  &__week {
+    display: flex;
+    height: 48px;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  &__day {
+    flex: 1;
+    @include flex-center;
+    padding: $spacing-xs 0;
+    position: relative;
+    
+    button {
+      @include flex-center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: transparent;
+      cursor: pointer;
+      transition: all $transition-fast;
+      position: relative;
+      z-index: 2;
+      
+      @include font-primary($font-weight-medium);
+      font-size: $font-size-base;
+      color: $color-red-brown;
+      line-height: $line-height-tight;
+      
+      &:hover {
+        background-color: rgba($color-red-brown, 0.1);
+      }
+      
+      &.selected {
+        background-color: $color-red-brown;
+        color: $color-white;
+        border: none;
+      }
+      
+      &.today {
+        font-weight: $font-weight-bold;
+      }
+      
+      &:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+        
+        &:hover {
+          background-color: transparent;
+        }
+      }
+    }
+    
+    // Range Selection Styles
+    &--start, &--end {
+      button {
+        background-color: $color-red-brown;
+        color: $color-white;
+        border: none;
+      }
+      
+      &::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 32px;
+        width: 50%;
+        background-color: rgba($color-red-brown, 0.1);
+        z-index: 1;
+      }
+    }
+    
+    &--start::before {
+      right: 0;
+      border-top-left-radius: 999px;
+      border-bottom-left-radius: 999px;
+    }
+    
+    &--end::before {
+      left: 0;
+      border-top-right-radius: 999px;
+      border-bottom-right-radius: 999px;
+    }
+    
+    &--in-range {
+      button {
+        background-color: rgba($color-red-brown, 0.1);
+        border-radius: 0;
+        width: 100%;
+        height: 32px;
+        
+        &:hover {
+          background-color: rgba($color-red-brown, 0.2);
+        }
+      }
+    }
+
+    &--empty {
+      button {
+        visibility: hidden;
+      }
+    }
+  }
+  
+  &__actions {
+    @include flex-between;
+    padding: $spacing-sm $spacing-md $spacing-md;
+  }
+  
+  &__action-btn {
+    padding: $spacing-sm $spacing-base;
+    border-radius: 999px;
+    background-color: transparent;
+    cursor: pointer;
+    transition: background-color $transition-fast;
+    
+    @include font-primary($font-weight-medium);
+    font-size: $font-size-base;
+    color: $color-red-brown;
+    line-height: $line-height-tight;
+    
+    &:hover {
+      background-color: rgba($color-red-brown, 0.05);
+    }
+  }
+
+  // Month/Year View Styles
+  &__month-year-view {
+    padding: 0 $spacing-md;
+    max-height: 300px;
+    overflow-y: auto;
+    
+    // Custom scrollbar
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background-color: rgba($color-red-brown, 0.2);
+      border-radius: 4px;
+    }
+  }
+}
+
+.month-year-grid {
+  @include flex-column;
+  gap: $spacing-lg;
+  padding: $spacing-md 0;
+  
+  &__year-section {
+    @include flex-column;
+    gap: $spacing-sm;
+  }
+  
+  &__year-label {
+    @include font-primary($font-weight-bold);
+    font-size: $font-size-md;
+    color: $color-red-brown;
+    padding-left: $spacing-xs;
+  }
+  
+  &__months {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: $spacing-sm;
+  }
+  
+  &__month-btn {
+    @include flex-center;
+    height: 36px;
+    border-radius: 999px;
+    background-color: transparent;
+    cursor: pointer;
+    transition: all $transition-fast;
+    
+    @include font-primary($font-weight-medium);
+    font-size: $font-size-sm;
+    color: $color-red-brown;
+    
+    &:hover {
+      background-color: rgba($color-red-brown, 0.05);
+    }
+    
+    &.current {
+      background-color: $color-red-brown;
+      color: $color-white;
+    }
+  }
+}
+
+.date-picker-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: calc(#{$z-index-modal} - 1);
+  cursor: pointer;
+}
+
+// Guest Amount Section (Step 2)
+.guest-amount-section {
+  @include flex-column;
+  gap: $spacing-base;
+  width: 100%;
+  
+  &__label {
+    @include text-subheading;
+  }
+  
+  // Day Tour Style - Separate bordered pill rows
+  &--day-tour {
+    .guest-amount-section__items {
+      @include flex-column;
+      gap: $spacing-base;
+    }
+    
+    .guest-amount-section__item {
+      border: 2px solid $color-red-brown;
+      border-radius: $radius-pill;
+      padding: $spacing-xs 50px;
+      height: 56px;
+      @include flex-between;
+      align-items: center;
+    }
+    
+    .guest-amount-section__item-info {
+      @include flex-center;
+      gap: $spacing-base;
+    }
+    
+    .guest-amount-section__item-label {
+      @include font-primary($font-weight-bold);
+      font-size: $font-size-md;
+      color: $color-red-brown;
+      line-height: $line-height-tight;
+      
+      span {
+        @include font-primary($font-weight-bold);
+        font-size: $font-size-base;
+      }
+    }
+    
+    .guest-amount-section__item-price {
+      @include font-secondary($font-weight-bold, italic);
+      font-size: $font-size-lg;
+      color: $color-red-brown;
+      line-height: $line-height-tight;
+      white-space: nowrap;
+    }
+  }
+  
+  // Overnight Tour Style - Room configuration in bordered box
+  &--overnight-tour {
+    .guest-amount-section__items {
+      @include flex-column;
+      gap: $spacing-base;
+    }
+    
+    .guest-amount-section__room {
+      border: 2px solid $color-red-brown;
+      border-radius: 30px;
+      padding: $spacing-xl 50px;
+      @include flex-column;
+      gap: 27px;
+    }
+    
+    .guest-amount-section__room-title {
+      @include font-primary($font-weight-bold);
+      font-size: $font-size-md;
+      color: $color-red-brown;
+      line-height: $line-height-tight;
+    }
+    
+    .guest-amount-section__room-guests {
+      @include flex-column;
+      gap: $spacing-base;
+    }
+    
+    .guest-amount-section__room-row {
+      @include flex-between;
+      align-items: center;
+      
+      &--two-cols {
+        display: flex;
+        gap: $spacing-base;
+        
+        > div {
+          flex: 1;
+          @include flex-between;
+          align-items: center;
+        }
+      }
+    }
+    
+    .guest-amount-section__room-label {
+      @include font-primary($font-weight-medium);
+      font-size: $font-size-base;
+      color: $color-red-brown;
+      line-height: $line-height-tight;
+      min-width: 160px;
+    }
+    
+    .guest-amount-section__room-total {
+      @include flex-between;
+      align-items: flex-end;
+      
+      .label {
+        @include font-primary($font-weight-bold);
+        font-size: $font-size-md;
+        color: $color-red-brown;
+        line-height: $line-height-tight;
+      }
+      
+      .price {
+        @include font-secondary($font-weight-bold, italic);
+        font-size: $font-size-lg;
+        color: $color-red-brown;
+        line-height: $line-height-tight;
+      }
+    }
+    
+    .guest-amount-section__add-room {
+      border: 2px solid $color-red-brown;
+      border-radius: $radius-pill;
+      padding: $spacing-xs 50px;
+      height: 56px;
+      @include flex-center;
+      background-color: transparent;
+      cursor: pointer;
+      transition: all $transition-base;
+      
+      &:hover {
+        background-color: rgba($color-red-brown, 0.05);
+      }
+      
+      .label {
+        @include font-primary($font-weight-bold);
+        font-size: $font-size-md;
+        color: $color-red-brown;
+        line-height: $line-height-tight;
+      }
+    }
+  }
+}
+
+// Number Counter
+.number-counter {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  background-color: $color-white;
+  padding: 5px;
+  border-radius: 10px;
+  
+  &__button {
+    @include flex-center;
+    width: 20px;
+    height: 20px;
+    border-radius: $radius-sm;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all $transition-fast;
+    
+    &:hover {
+      opacity: 0.7;
+    }
+    
+    &:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      
+      &:hover {
+        opacity: 0.3;
+      }
+    }
+    
+    span {
+      @include font-primary($font-weight-medium);
+      font-size: $font-size-base;
+      line-height: 1;
+      color: $color-black;
+    }
+  }
+  
+  &__value {
+    @include font-primary($font-weight-medium);
+    font-size: $font-size-md;
+    color: $color-black;
+    min-width: 24px;
+    text-align: center;
+    line-height: $line-height-tight;
+  }
+}
+
+// Button Primary
+.btn-primary {
+  @include button-primary;
+}
+
+.btn-secondary {
+  @include button-base;
+  @include font-primary($font-weight-medium);
+  background-color: transparent;
+  color: $color-red-brown;
+  font-size: $font-size-md;
+  padding: $spacing-md $spacing-xl;
+  border-radius: $radius-full;
+  border: 1px solid $color-red-brown;
+  gap: $spacing-sm;
+  
+  &:hover {
+    background-color: $color-red-brown;
+    color: $color-white;
+  }
+}

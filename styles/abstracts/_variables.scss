@@ -1,0 +1,110 @@
+// ==========================================================================
+// SAIGON RIVER STAR - Design System Variables
+// ==========================================================================
+
+// --------------------------------------------------------------------------
+// Colors
+// --------------------------------------------------------------------------
+
+// Brand Colors
+$color-red-brown: #56231E;
+$color-red-brown-dark: #3D2B1C;
+$color-maroon: #8B1B0C;
+$color-beige: #FFF1DA;
+$color-beige-light: #FFF9EE;
+$color-peach: #F6D0AA;
+
+// Neutral Colors
+$color-white: #FFFFFF;
+$color-black: #000008;
+$color-grey: #EAEAEA;
+$color-grey-blue: #A8B7D4;
+
+// Gradients
+$gradient-primary: linear-gradient(to bottom, $color-red-brown-dark, $color-maroon);
+$gradient-background: linear-gradient(to bottom, $color-beige-light, $color-peach);
+
+// --------------------------------------------------------------------------
+// Typography
+// --------------------------------------------------------------------------
+
+// Font Families
+$font-primary: 'Mona Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+$font-secondary: var(--font-libre-bodoni), 'Libre Bodoni', Georgia, serif;
+$font-tertiary: 'Marion', Georgia, serif;
+
+// Font Weights
+$font-weight-regular: 400;
+$font-weight-medium: 500;
+$font-weight-bold: 700;
+
+// Font Sizes
+$font-size-xs: 10px;
+$font-size-sm: 12px;
+$font-size-base: 16px;
+$font-size-md: 20px;
+$font-size-lg: 26px;
+$font-size-xl: 28px;
+
+// Line Heights
+$line-height-tight: 1.1;
+$line-height-normal: 1.4;
+$line-height-relaxed: 1.625;
+
+// --------------------------------------------------------------------------
+// Spacing
+// --------------------------------------------------------------------------
+
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 12px;
+$spacing-base: 15px;
+$spacing-lg: 20px;
+$spacing-xl: 30px;
+$spacing-2xl: 50px;
+$spacing-3xl: 51px;
+
+// --------------------------------------------------------------------------
+// Border Radius
+// --------------------------------------------------------------------------
+
+$radius-sm: 2px;
+$radius-md: 4px;
+$radius-lg: 20px;
+$radius-xl: 25px;
+$radius-pill: 60px;
+$radius-full: 100px;
+
+// --------------------------------------------------------------------------
+// Shadows
+// --------------------------------------------------------------------------
+
+$shadow-navbar: 0px 3px 30px 0px rgba(0, 0, 0, 0.15);
+$shadow-card: 0px 0px 30px 0px rgba(0, 0, 0, 0.35);
+$shadow-dropdown: 0px 0px 1px 0px rgba(66, 71, 76, 0.32), 0px 8px 12px 0px rgba(66, 71, 76, 0.08);
+
+// --------------------------------------------------------------------------
+// Layout
+// --------------------------------------------------------------------------
+
+$container-max-width: 1440px;
+$navbar-height: 80px;
+$sidebar-width: 506px;
+$form-width: 784px;
+
+// --------------------------------------------------------------------------
+// Transitions
+// --------------------------------------------------------------------------
+
+$transition-fast: 0.15s ease;
+$transition-base: 0.25s ease;
+$transition-slow: 0.4s ease;
+
+// --------------------------------------------------------------------------
+// Z-Index
+// --------------------------------------------------------------------------
+
+$z-index-dropdown: 100;
+$z-index-sticky: 200;
+$z-index-navbar: 300;
+$z-index-modal: 400;
