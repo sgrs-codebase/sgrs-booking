@@ -22,7 +22,42 @@ export async function GET(request: NextRequest) {
   if (isVerified && responseCode === '0') {
     // Payment Successful
     
-    // TODO: Phase 4 - Save to Google Sheets
+    // Save to Airtable
+    try {
+      const { updateOrderStatusAirtable, saveOrderToAirtable } = await import('@/lib/airtable');
+      
+      const txnRef = params['vpc_MerchTxnRef'] || '';
+      
+      // Strategy: Try to update existing "Pending" order first
+      const updated = await updateOrderStatusAirtable(orderId, 'Paid', txnRef);
+      
+      if (!updated) {
+        // Fallback: If no pending order found (e.g., save failed earlier), create a new row
+        // We have limited info here, but it's better than nothing.
+        const orderInfo = params['vpc_OrderInfo'] || '';
+        const amount = params['vpc_Amount'] ? (parseInt(params['vpc_Amount']) / 100).toString() : '0';
+        
+        console.warn(`Order ${orderId} not found for update. Creating new row from IPN data.`);
+        
+        await saveOrderToAirtable({
+          OrderID: orderId,
+          Timestamp: new Date().toISOString(),
+          CustomerName: 'Guest (From IPN)',
+          Email: params['vpc_Customer_Email'] || '',
+          Phone: params['vpc_Customer_Phone'] || '',
+          TourID: 'Unknown',
+          Guests: orderInfo,
+          Amount: amount,
+          PaymentStatus: 'Paid (Fallback)',
+          OnePayRef: txnRef,
+          FullGuestDetails: '{"note": "Created from IPN Fallback, no details"}'
+        });
+      }
+      
+    } catch (dbError) {
+      console.error('Failed to save/update Airtable:', dbError);
+    }
+
     // TODO: Phase 4 - Send Email via Resend
 
     // Redirect to success page

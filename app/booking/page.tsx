@@ -1,12 +1,12 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { Suspense, useState, useCallback } from 'react';
+import { Suspense, useState, useCallback, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import TourCard from '@/components/features/TourCard';
 import BookingForm from '@/components/features/BookingForm';
 import TripTotal from '@/components/features/TripTotal';
-import { getTourById } from '@/lib/tours-data';
+import { type Tour } from '@/lib/tours-data';
 
 // Default tour for demo purposes
 const DEFAULT_TOUR_ID = 'cu-chi-tunnels';
@@ -15,8 +15,25 @@ function BookingContent() {
   const searchParams = useSearchParams();
   const tourId = searchParams.get('tourId') || DEFAULT_TOUR_ID;
   
-  // Get tour data - validate against our source of truth
-  const tour = getTourById(tourId) || getTourById(DEFAULT_TOUR_ID)!;
+  const [tour, setTour] = useState<Tour | null>(null);
+  const [isLoadingTour, setIsLoadingTour] = useState(true);
+
+  useEffect(() => {
+    async function fetchTour() {
+      try {
+        const res = await fetch('/api/tours');
+        if (!res.ok) throw new Error('Failed to fetch tours');
+        const tours: Tour[] = await res.json();
+        const found = tours.find(t => t.id === tourId) || tours.find(t => t.id === DEFAULT_TOUR_ID);
+        setTour(found || null);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setIsLoadingTour(false);
+      }
+    }
+    fetchTour();
+  }, [tourId]);
   
   const [currentStep, setCurrentStep] = useState(1);
   // const [selectedDate, setSelectedDate] = useState('');
@@ -46,6 +63,7 @@ function BookingContent() {
       issuingAuthority: string;
     }>;
   }) => {
+    if (!tour) return;
     try {
       setIsSubmitting(true);
       
@@ -89,7 +107,7 @@ function BookingContent() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [tour.id]);
+  }, [tour]);
 
   const handleContinue = useCallback(() => {
     if (currentStep < 4) {
@@ -100,6 +118,10 @@ function BookingContent() {
       }, 0);
     }
   }, [currentStep, setCurrentStep]);
+
+  if (isLoadingTour || !tour) {
+    return <BookingPageSkeleton />;
+  }
 
   return (
     <div className="booking-page">

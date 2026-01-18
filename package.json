@@ -9,7 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "airtable": "^0.12.2",
     "date-fns": "^4.1.0",
+    "google-auth-library": "^10.5.0",
     "google-spreadsheet": "^5.0.2",
     "lucide-react": "^0.562.0",
     "next": "16.1.1",

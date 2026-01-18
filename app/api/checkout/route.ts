@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTourById, calculateTotalPrice } from '@/lib/tours-data';
+import { getToursFromAirtable } from '@/lib/airtable';
 import { buildPaymentUrl, OnePayParams } from '@/lib/onepay';
 
 export async function POST(request: NextRequest) {
@@ -7,14 +7,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { tourId, adults, children, infants, customerInfo } = body;
 
-    // 1. Validate Tour
-    const tour = getTourById(tourId);
+    // 1. Validate Tour (Fetch from Airtable)
+    const tours = await getToursFromAirtable();
+    const tour = tours.find(t => t.id === tourId);
+
     if (!tour) {
       return NextResponse.json({ error: 'Invalid Tour ID' }, { status: 400 });
     }
 
     // 2. Calculate Price (Server-side validation)
-    const amount = calculateTotalPrice(tourId, adults, children, infants);
+    const amount = (adults * tour.adultPrice) + (children * tour.childPrice) + (infants * tour.infantPrice);
+    
     if (amount === 0) {
       return NextResponse.json({ error: 'Invalid Amount' }, { status: 400 });
     }
@@ -113,6 +116,32 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Generated Payment URL:', paymentUrl); // Debugging
+
+    // 6. Save "Pending" Order to Airtable
+    // This ensures we have the full data even if OnePay doesn't return it
+    try {
+      const { saveOrderToAirtable } = await import('@/lib/airtable');
+
+      // Serialize full guest list for storage (optional, if you have a column for it)
+      const fullGuestData = JSON.stringify(body.guests || []);
+
+      await saveOrderToAirtable({
+        OrderID: orderId,
+        Timestamp: new Date().toISOString(),
+        CustomerName: customerInfo ? `${customerInfo.firstName} ${customerInfo.lastName}` : 'Guest',
+        Email: customerEmail,
+        Phone: customerPhone,
+        TourID: tour.id,
+        Guests: `${adults} Adults, ${children} Children, ${infants} Infants`,
+        Amount: (amount * 100).toString(), // Store as integer string if needed, or format
+        PaymentStatus: 'Pending',
+        OnePayRef: '',
+        FullGuestDetails: fullGuestData
+      });
+      console.log('Pending order saved to Airtable');
+    } catch (dbError) {
+      console.error('Failed to save pending order to Airtable:', dbError);    
+    }
 
     return NextResponse.json({ paymentUrl });
   } catch (error) {
