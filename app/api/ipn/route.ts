@@ -23,15 +23,29 @@ export async function GET(request: NextRequest) {
     // Payment Successful
     
     // Save to Airtable
+    let txnRef = '';
+    let customerName = 'Valued Customer';
+    let guests = params['vpc_OrderInfo'] || 'N/A';
+    let tourName = 'Saigon River Star Tour';
+
     try {
-      const { updateOrderStatusAirtable, saveOrderToAirtable } = await import('@/lib/airtable');
+      const { updateOrderStatusAirtable, saveOrderToAirtable, getOrderFromAirtable } = await import('@/lib/airtable');
       
-      const txnRef = params['vpc_MerchTxnRef'] || '';
+      txnRef = params['vpc_MerchTxnRef'] || '';
       
       // Strategy: Try to update existing "Pending" order first
-      const updated = await updateOrderStatusAirtable(orderId, 'Paid', txnRef);
+      // The update function now returns the Record object if successful, or false
+      const updatedRecord = await updateOrderStatusAirtable(orderId, 'Paid', txnRef);
       
-      if (!updated) {
+      if (updatedRecord) {
+         const orderData = await getOrderFromAirtable(orderId);
+         
+         if (orderData) {
+            customerName = orderData.CustomerName;
+            guests = orderData.Guests;
+            tourName = orderData.TourID; // Ideally we fetch Tour Name from TourID, but ID is better than nothing
+         }
+      } else {
         // Fallback: If no pending order found (e.g., save failed earlier), create a new row
         // We have limited info here, but it's better than nothing.
         const orderInfo = params['vpc_OrderInfo'] || '';
@@ -59,6 +73,39 @@ export async function GET(request: NextRequest) {
     }
 
     // TODO: Phase 4 - Send Email via Resend
+    try {
+      const { Resend } = await import('resend');
+      const { BookingReceipt } = await import('@/components/emails/BookingReceipt');
+      const { render } = await import('@react-email/render');
+      
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const adminEmail = process.env.ADMIN_EMAIL || 'bookings@saigonriverstar.com'; // Fallback
+      
+      const emailHtml = await render(BookingReceipt({
+        customerName: customerName, 
+        orderId: orderId,
+        tourName: tourName, 
+        guests: guests,
+        amount: params['vpc_Amount'] ? (parseInt(params['vpc_Amount']) / 100).toString() : '0',
+        paymentRef: txnRef
+      }));
+
+      const { data, error } = await resend.emails.send({
+        from: 'onboarding@resend.dev', // Testing Mode
+        to: [adminEmail], // Send to Admin (must be your Resend account email)
+        subject: `Booking Confirmed - ${orderId}`,
+        html: emailHtml,
+      });
+
+      if (error) {
+        console.error('Resend Email Error:', error);
+      } else {
+        console.log('Email sent successfully:', data);
+      }
+
+    } catch (emailError) {
+      console.error('Failed to send email:', emailError);
+    }
 
     // Redirect to success page
     const successUrl = new URL('/booking/success', request.url);

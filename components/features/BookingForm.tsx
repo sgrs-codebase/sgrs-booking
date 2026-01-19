@@ -248,7 +248,7 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
               )}
             </div>
           </div>
-          <button className="date-picker-modal__close-btn" onClick={onClose}>
+          <button type="button" className="date-picker-modal__close-btn" onClick={onClose}>
             <CloseIcon />
           </button>
         </div>
@@ -257,6 +257,7 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
           <>
             <div className="date-picker-modal__month-selector">
               <button 
+                type="button"
                 className="date-picker-modal__month-btn"
                 onClick={() => setViewMode('month-year')}
               >
@@ -264,10 +265,10 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
                 <ChevronDown />
               </button>
               <div className="date-picker-modal__month-controls">
-                <button className="date-picker-modal__nav-btn" onClick={handlePrevMonth}>
+                <button type="button" className="date-picker-modal__nav-btn" onClick={handlePrevMonth}>
                   <ChevronLeft />
                 </button>
-                <button className="date-picker-modal__nav-btn" onClick={handleNextMonth}>
+                <button type="button" className="date-picker-modal__nav-btn" onClick={handleNextMonth}>
                   <ChevronRight />
                 </button>
               </div>
@@ -291,6 +292,7 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
                     return (
                       <div key={dayIndex} className={`date-picker-modal__day ${!day ? 'date-picker-modal__day--empty' : ''} ${selectionState ? `date-picker-modal__day--${selectionState}` : ''}`}>
                         <button
+                          type="button"
                           onClick={() => day && handleDateClick(day)}
                           className={selectionState === 'selected' || selectionState === 'start' || selectionState === 'end' ? 'selected' : ''}
                           disabled={!day}
@@ -332,8 +334,8 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
         <div className="date-picker-modal__actions">
           <div></div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="date-picker-modal__action-btn" onClick={onClose}>Cancel</button>
-            <button className="date-picker-modal__action-btn" onClick={handleConfirm}>OK</button>
+            <button type="button" className="date-picker-modal__action-btn" onClick={onClose}>Cancel</button>
+            <button type="button" className="date-picker-modal__action-btn" onClick={handleConfirm}>OK</button>
           </div>
         </div>
       </div>
