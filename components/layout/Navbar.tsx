@@ -19,16 +19,16 @@ export default function Navbar() {
       </Link>
       
       <div className="navbar__nav">
-        <Link href="#about" className="navbar__link">
+        <Link href="https://www.saigonriverstar.com/about-us" className="navbar__link">
           About Us
         </Link>
-        <Link href="#tours" className="navbar__link">
+        <Link href="https://www.saigonriverstar.com/journeys" className="navbar__link">
           Tours
         </Link>
-        <Link href="#contact" className="navbar__link">
+        <Link href="https://www.saigonriverstar.com/contact" className="navbar__link">
           Contact
         </Link>
-        <Link href="/booking" className="navbar__cta">
+        <Link href="https://www.saigonriverstar.com/contact" className="navbar__cta">
           Book Your Tours
         </Link>
       </div>

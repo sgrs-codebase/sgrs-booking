@@ -45,6 +45,7 @@ function BookingContent() {
 
   const handleFormSubmit = useCallback(async (data: {
     date: string;
+    returnDate?: string;
     adults: number;
     children: number;
     infants: number;

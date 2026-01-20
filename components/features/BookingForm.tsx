@@ -315,6 +315,7 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
                   <div className="month-year-grid__months">
                     {months.map((month, index) => (
                       <button
+                        type="button"
                         key={month}
                         className={`month-year-grid__month-btn ${
                           currentMonth.getMonth() === index && currentMonth.getFullYear() === year ? 'current' : ''
@@ -366,6 +367,7 @@ interface BookingFormProps {
   infantPrice: number;
   onSubmit: (data: {
     date: string;
+    returnDate?: string;
     adults: number;
     children: number;
     infants: number;
@@ -520,6 +522,7 @@ export default function BookingForm({
 
     onSubmit({
       date: selectedDate,
+      returnDate: selectedReturnDate,
       adults: tourType === 'overnight-tour' ? rooms.reduce((sum, r) => sum + r.adults, 0) : adults,
       children: tourType === 'overnight-tour' ? rooms.reduce((sum, r) => sum + r.children, 0) : children,
       infants: tourType === 'overnight-tour' ? rooms.reduce((sum, r) => sum + r.infants, 0) : infants,
@@ -701,7 +704,7 @@ export default function BookingForm({
                 </div>
               ))}
               
-              <button className="guest-amount-section__add-room" onClick={addRoom}>
+              <button type="button" className="guest-amount-section__add-room" onClick={addRoom}>
                 <span className="label">Add another room</span>
               </button>
             </div>

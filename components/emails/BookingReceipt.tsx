@@ -15,7 +15,7 @@ interface BookingReceiptProps {
   customerName: string;
   orderId: string;
   tourName: string;
-  tourDate?: string; // We might not have this yet depending on flow, but good to have
+  travelDate?: string; // We might not have this yet depending on flow, but good to have
   guests: string;
   amount: string;
   paymentRef: string;
@@ -25,7 +25,7 @@ export const BookingReceipt = ({
   customerName,
   orderId,
   tourName,
-  tourDate,
+  travelDate,
   guests,
   amount,
   paymentRef,
@@ -49,7 +49,7 @@ export const BookingReceipt = ({
           <Section style={box}>
             <Text style={paragraph}><strong>Order ID:</strong> {orderId}</Text>
             <Text style={paragraph}><strong>Tour:</strong> {tourName}</Text>
-            {tourDate && <Text style={paragraph}><strong>Date:</strong> {tourDate}</Text>}
+            {travelDate && <Text style={paragraph}><strong>Date:</strong> {travelDate}</Text>}
             <Text style={paragraph}><strong>Guests:</strong> {guests}</Text>
             <Text style={paragraph}><strong>Total Paid:</strong> {Number(amount).toLocaleString('vi-VN')} VND</Text>
             <Text style={paragraph}><strong>Payment Ref:</strong> {paymentRef}</Text>

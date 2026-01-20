@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
     let customerName = 'Valued Customer';
     let guests = params['vpc_OrderInfo'] || 'N/A';
     let tourName = 'Saigon River Star Tour';
+    let travelDate = 'N/A';
 
     try {
       const { updateOrderStatusAirtable, saveOrderToAirtable, getOrderFromAirtable } = await import('@/lib/airtable');
@@ -44,6 +45,9 @@ export async function GET(request: NextRequest) {
             customerName = orderData.CustomerName;
             guests = orderData.Guests;
             tourName = orderData.TourID; // Ideally we fetch Tour Name from TourID, but ID is better than nothing
+            travelDate = orderData.ReturnDate 
+              ? `${orderData.TravelDate} - ${orderData.ReturnDate}`
+              : orderData.TravelDate;
          }
       } else {
         // Fallback: If no pending order found (e.g., save failed earlier), create a new row
@@ -64,7 +68,8 @@ export async function GET(request: NextRequest) {
           Amount: amount,
           PaymentStatus: 'Paid (Fallback)',
           OnePayRef: txnRef,
-          FullGuestDetails: '{"note": "Created from IPN Fallback, no details"}'
+          FullGuestDetails: '{"note": "Created from IPN Fallback, no details"}',
+          TravelDate: 'N/A (IPN Fallback)'
         });
       }
       
@@ -87,7 +92,8 @@ export async function GET(request: NextRequest) {
         tourName: tourName, 
         guests: guests,
         amount: params['vpc_Amount'] ? (parseInt(params['vpc_Amount']) / 100).toString() : '0',
-        paymentRef: txnRef
+        paymentRef: txnRef,
+        travelDate: travelDate
       }));
 
       const { data, error } = await resend.emails.send({
@@ -114,6 +120,15 @@ export async function GET(request: NextRequest) {
   } else {
     // Payment Failed or Signature Mismatch
     
+    // Update Airtable to Failed/Cancelled
+    try {
+      const { updateOrderStatusAirtable } = await import('@/lib/airtable');
+      const status = responseCode === '99' ? 'Cancelled' : 'Failed';
+      await updateOrderStatusAirtable(orderId, status, params['vpc_MerchTxnRef'] || '');
+    } catch (error) {
+      console.error('Failed to update Airtable status on failure:', error);
+    }
+
     const failedUrl = new URL('/booking/failed', request.url);
     failedUrl.searchParams.set('reason', isVerified ? 'payment_failed' : 'invalid_signature');
     if (responseCode) failedUrl.searchParams.set('code', responseCode);

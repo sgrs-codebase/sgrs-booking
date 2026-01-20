@@ -18,6 +18,8 @@ export interface OrderRecord {
   PaymentStatus: string;
   OnePayRef: string;
   FullGuestDetails: string; // JSON string
+  TravelDate: string; // "YYYY-MM-DD"
+  ReturnDate?: string; // "YYYY-MM-DD" (Optional)
 }
 
 export interface TourRecord {
@@ -41,21 +43,30 @@ export interface TourRecord {
 
 export async function saveOrderToAirtable(order: OrderRecord) {
   try {
+    const fields: Record<string, string | number | boolean> = {
+      OrderID: order.OrderID,
+      Timestamp: order.Timestamp,
+      CustomerName: order.CustomerName,
+      Email: order.Email,
+      Phone: order.Phone,
+      TourID: order.TourID,
+      Guests: order.Guests,
+      Amount: order.Amount,
+      PaymentStatus: order.PaymentStatus,
+      OnePayRef: order.OnePayRef,
+      FullGuestDetails: order.FullGuestDetails,
+      TravelDate: order.TravelDate
+    };
+
+    // Only add ReturnDate if it exists and is not empty
+    // Sending an empty string to a Date field in Airtable causes an error
+    if (order.ReturnDate) {
+      fields.ReturnDate = order.ReturnDate;
+    }
+
     await base('Orders').create([
       {
-        fields: {
-          OrderID: order.OrderID,
-          Timestamp: order.Timestamp,
-          CustomerName: order.CustomerName,
-          Email: order.Email,
-          Phone: order.Phone,
-          TourID: order.TourID,
-          Guests: order.Guests,
-          Amount: order.Amount,
-          PaymentStatus: order.PaymentStatus,
-          OnePayRef: order.OnePayRef,
-          FullGuestDetails: order.FullGuestDetails
-        }
+        fields: fields
       }
     ]);
     console.log(`Order ${order.OrderID} saved to Airtable`);
@@ -119,6 +130,7 @@ export async function getOrderFromAirtable(orderId: string): Promise<OrderRecord
       PaymentStatus: record.get('PaymentStatus') as string,
       OnePayRef: record.get('OnePayRef') as string,
       FullGuestDetails: record.get('FullGuestDetails') as string,
+      TravelDate: record.get('TravelDate') as string,
     };
   } catch (error) {
     console.error('Airtable Get Order Error:', error);
