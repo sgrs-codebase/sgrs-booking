@@ -99,6 +99,25 @@
   transform: translate(-50%, -50%);
 }
 
+// --------------------------------------------------------------------------
+// Responsive Mixins
+// --------------------------------------------------------------------------
+
+@mixin respond-to($breakpoint) {
+  @if $breakpoint == mobile {
+    @media (max-width: $breakpoint-mobile) { @content; }
+  }
+  @else if $breakpoint == tablet {
+    @media (max-width: $breakpoint-tablet) { @content; }
+  }
+  @else if $breakpoint == desktop-sm {
+    @media (max-width: $breakpoint-desktop-sm) { @content; }
+  }
+  @else if $breakpoint == desktop-md {
+    @media (max-width: $breakpoint-desktop-md) { @content; }
+  }
+}
+
 @mixin absolute-center-y {
   position: absolute;
   top: 50%;

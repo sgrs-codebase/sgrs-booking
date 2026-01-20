@@ -31,6 +31,7 @@
     top: 60px;
     height: fit-content;
     flex-shrink: 0;
+    z-index: 10;
   }
   
   &__main {
@@ -38,6 +39,7 @@
     max-width: $form-width;
     padding-top: 20px;
     position: relative;
+    width: 100%; // Ensure it takes width
   }
 }
 
@@ -55,6 +57,8 @@
       top: 0;
       width: 100%;
       max-width: $sidebar-width;
+      display: flex;
+      justify-content: center;
     }
     
     &__main {
@@ -97,12 +101,9 @@
   
   .guest-form__row {
     flex-direction: column;
-    
-    &--thirds {
-      flex-direction: column;
-    }
+    gap: $spacing-md;
   }
-  
+
   .step-indicator {
     flex-wrap: wrap;
     gap: $spacing-sm;

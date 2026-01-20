@@ -6,7 +6,8 @@
 
 .tour-card {
   @include card-base;
-  width: $sidebar-width;
+  width: 100%;
+  max-width: $sidebar-width;
   height: 670px;
   overflow-x: hidden;
   overflow-y: auto;
@@ -18,8 +19,11 @@
     gap: 27px;
     align-items: center;
     padding: $spacing-lg 0;
-    width: 466px;
+    width: 100%;
+    max-width: 466px;
     margin: 0 auto;
+    padding-left: $spacing-md;
+    padding-right: $spacing-md;
   }
   
   &__image {
@@ -47,7 +51,8 @@
   &__info {
       @include flex-column;
       gap: $spacing-md;
-      width: 416px;
+      width: 100%;
+      max-width: 416px;
       color: $color-red-brown;
     }
     
@@ -68,7 +73,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      width: 416px;
+      width: 100%;
+      max-width: 416px;
       margin-top: $spacing-md;
       padding-bottom: $spacing-lg;
       border-bottom: 2px solid $color-red-brown;
@@ -79,7 +85,8 @@
     }
     
     &__accordion {
-      width: 416px;
+      width: 100%;
+      max-width: 416px;
     }
 }
 

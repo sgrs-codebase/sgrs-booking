@@ -7,7 +7,8 @@
 .booking-form {
   @include flex-column;
   gap: $spacing-2xl;
-  width: $form-width;
+  width: 100%;
+  max-width: $form-width;
   padding-bottom: 200px; // Space for sticky footer
   
   &__section {
@@ -620,11 +621,24 @@
       height: 56px;
       @include flex-between;
       align-items: center;
+      
+      @media (max-width: 768px) {
+        height: auto;
+        flex-direction: column;
+        padding: $spacing-base;
+        gap: $spacing-sm;
+        border-radius: $radius-lg;
+      }
     }
     
     .guest-amount-section__item-info {
       @include flex-center;
       gap: $spacing-base;
+      
+      @media (max-width: 768px) {
+        flex-direction: column;
+        width: 100%;
+      }
     }
     
     .guest-amount-section__item-label {
@@ -661,6 +675,11 @@
       padding: $spacing-xl 50px;
       @include flex-column;
       gap: 27px;
+      
+      @media (max-width: 768px) {
+        padding: $spacing-lg $spacing-base;
+        border-radius: $radius-lg;
+      }
     }
     
     .guest-amount-section__room-title {
@@ -682,6 +701,11 @@
       &--two-cols {
         display: flex;
         gap: $spacing-base;
+        
+        @media (max-width: 768px) {
+          flex-direction: column;
+          align-items: stretch;
+        }
         
         > div {
           flex: 1;
