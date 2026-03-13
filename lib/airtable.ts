@@ -20,6 +20,7 @@ export interface OrderRecord {
   FullGuestDetails: string; // JSON string
   TravelDate: string; // "YYYY-MM-DD"
   ReturnDate?: string; // "YYYY-MM-DD" (Optional)
+  DepartureTime?: string; // "HH:mm" (Optional)
 }
 
 export interface TourRecord {
@@ -35,6 +36,8 @@ export interface TourRecord {
   infantPrice: number;
   includes: string[];
   notes: string[];
+  notices?: string;
+  forceMajeure?: string;
 }
 
 // ==========================================
@@ -62,6 +65,10 @@ export async function saveOrderToAirtable(order: OrderRecord) {
     // Sending an empty string to a Date field in Airtable causes an error
     if (order.ReturnDate) {
       fields.ReturnDate = order.ReturnDate;
+    }
+
+    if (order.DepartureTime) {
+      fields.DepartureTime = order.DepartureTime;
     }
 
     await base('Orders').create([
@@ -131,6 +138,8 @@ export async function getOrderFromAirtable(orderId: string): Promise<OrderRecord
       OnePayRef: record.get('OnePayRef') as string,
       FullGuestDetails: record.get('FullGuestDetails') as string,
       TravelDate: record.get('TravelDate') as string,
+      ReturnDate: record.get('ReturnDate') as string,
+      DepartureTime: record.get('DepartureTime') as string,
     };
   } catch (error) {
     console.error('Airtable Get Order Error:', error);
@@ -138,9 +147,159 @@ export async function getOrderFromAirtable(orderId: string): Promise<OrderRecord
   }
 }
 
+// Count bookings for a specific tour on a specific date
+export async function countDailyBookings(tourId: string, travelDate: string): Promise<number> {
+  try {
+    const records = await base('Orders').select({
+      filterByFormula: `AND({TourID} = '${tourId}', {TravelDate} = '${travelDate}')`,
+    }).all();
+
+    return records.length;
+  } catch (error) {
+    console.error('Airtable Count Daily Bookings Error:', error);
+    return 0;
+  }
+}
+
+// Generate OrderID in format: TOUR{number}.{ddMMyyyy}.{sequence}
+// Example: TOUR1.27032026.001
+export async function generateOrderId(tourId: string, travelDate: string): Promise<string> {
+  // Map tour IDs to numbers
+  const tourNumbers: Record<string, number> = {
+    'cu-chi-tunnels': 1,
+    'sunset-cruise': 2,
+    'mekong-delta': 3,
+  };
+
+  const tourNumber = tourNumbers[tourId] || 1;
+
+  // Format date as ddMMyyyy from YYYY-MM-DD string
+  // Parse manually to avoid timezone issues
+  const [year, month, day] = travelDate.split('-');
+  const formattedDate = `${day}${month}${year}`;
+
+  // Get current count for this tour on this date and increment
+  const currentCount = await countDailyBookings(tourId, travelDate);
+  const sequence = String(currentCount + 1).padStart(3, '0');
+
+  return `TOUR${tourNumber}.${formattedDate}.${sequence}`;
+}
+
 // ==========================================
 // TOURS
 // ==========================================
+
+// Convert plain text with bullet points to HTML
+// Supports:
+// - Lines starting with "- " or "* " or "\- " become list items
+// - Lines starting with "  - " or "  * " or "  \- " (2 spaces) become nested list items
+// - Regular lines become paragraphs
+// - Empty lines are preserved as spacing
+function convertPlainTextToHTML(text: string): string {
+  if (!text) return '';
+
+  const lines = text.split('\n');
+  const html: string[] = [];
+  let inList = false;
+  let inNestedList = false;
+  let lastWasRegularItem = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    // Empty line
+    if (!trimmed) {
+      if (inNestedList) {
+        html.push('    </ul>');
+        html.push('  </li>');
+        inNestedList = false;
+      }
+      if (inList) {
+        html.push('</ul>');
+        inList = false;
+      }
+      html.push('<br />');
+      lastWasRegularItem = false;
+      continue;
+    }
+
+    // Nested list item (starts with 2+ spaces and - or * or \-)
+    if (/^  \\?[-*]\s/.test(line)) {
+      const content = line.replace(/^  \\?[-*]\s/, '').trim();
+
+      if (!inList) {
+        html.push('<ul>');
+        inList = true;
+      }
+
+      // If last item was a regular item, nest inside it
+      // Otherwise, close previous nested list and start fresh
+      if (!inNestedList) {
+        if (lastWasRegularItem) {
+          // Remove the closing </li> tag from the previous item
+          const lastIndex = html.length - 1;
+          if (html[lastIndex].trim() === '</li>') {
+            html.pop();
+          }
+        }
+        html.push('    <ul>');
+        inNestedList = true;
+      }
+
+      html.push(`      <li>${content}</li>`);
+      lastWasRegularItem = false;
+      continue;
+    }
+
+    // Regular list item (starts with - or * or \-)
+    if (/^\\?[-*]\s/.test(trimmed)) {
+      const content = trimmed.replace(/^\\?[-*]\s/, '');
+
+      if (inNestedList) {
+        html.push('    </ul>');
+        html.push('  </li>');
+        inNestedList = false;
+      }
+
+      if (!inList) {
+        html.push('<ul>');
+        inList = true;
+      }
+
+      html.push(`  <li>${content}</li>`);
+      lastWasRegularItem = true;
+      continue;
+    }
+
+    // Regular paragraph
+    if (inNestedList) {
+      html.push('    </ul>');
+      html.push('  </li>');
+      inNestedList = false;
+    }
+    if (inList) {
+      html.push('</ul>');
+      inList = false;
+    }
+
+    html.push(`<p class="no-bullet">${trimmed}</p>`);
+    lastWasRegularItem = false;
+  }
+
+  // Close any remaining open tags
+  if (inNestedList) {
+    html.push('    </ul>');
+    if (lastWasRegularItem) {
+      html.push('  </li>');
+    }
+  }
+  if (inList) {
+    html.push('</ul>');
+  }
+
+  return html.join('\n');
+}
 
 // Simple in-memory cache for tours (shared across the server instance)
 let cachedTours: TourRecord[] | null = null;
@@ -157,7 +316,7 @@ export async function getToursFromAirtable(): Promise<TourRecord[]> {
     }
 
     const records = await base('Tours').select().all();
-    
+
     if (records.length === 0) {
       console.log('No tours found in Airtable, using local fallback');
       const fallbackTours = Object.values(TOURS).map(tour => ({
@@ -172,7 +331,13 @@ export async function getToursFromAirtable(): Promise<TourRecord[]> {
         childPrice: tour.childPrice,
         infantPrice: tour.infantPrice,
         includes: tour.includes,
-        notes: tour.notes
+        notes: tour.notes,
+        notices: tour.notices && !tour.notices.trim().startsWith('<')
+          ? convertPlainTextToHTML(tour.notices)
+          : tour.notices,
+        forceMajeure: tour.forceMajeure && !tour.forceMajeure.trim().startsWith('<')
+          ? convertPlainTextToHTML(tour.forceMajeure)
+          : tour.forceMajeure
       }));
       // Even if fallback, we can cache it to avoid reprocessing
       cachedTours = fallbackTours;
@@ -183,6 +348,17 @@ export async function getToursFromAirtable(): Promise<TourRecord[]> {
     const tours = records.map(record => {
       const includesRaw = (record.get('includes') as string) || '';
       const notesRaw = (record.get('notes') as string) || '';
+      const noticesRaw = (record.get('notices') as string) || '';
+      const forceMajeureRaw = (record.get('forceMajeure') as string) || '';
+
+      // Convert plain text to HTML if not already HTML
+      const noticesHTML = noticesRaw && !noticesRaw.trim().startsWith('<')
+        ? convertPlainTextToHTML(noticesRaw)
+        : noticesRaw;
+
+      const forceMajeureHTML = forceMajeureRaw && !forceMajeureRaw.trim().startsWith('<')
+        ? convertPlainTextToHTML(forceMajeureRaw)
+        : forceMajeureRaw;
 
       return {
         id: record.get('id') as string,
@@ -196,14 +372,16 @@ export async function getToursFromAirtable(): Promise<TourRecord[]> {
         childPrice: Number(record.get('childPrice')),
         infantPrice: Number(record.get('infantPrice')),
         includes: includesRaw.split('\n').map(s => s.trim()).filter(Boolean),
-        notes: notesRaw.split('\n').map(s => s.trim()).filter(Boolean)
+        notes: notesRaw.split('\n').map(s => s.trim()).filter(Boolean),
+        notices: noticesHTML || undefined,
+        forceMajeure: forceMajeureHTML || undefined
       };
     });
 
     // Update cache
     cachedTours = tours;
     lastFetchTime = now;
-    
+
     return tours;
   } catch (error) {
     console.error('Airtable Get Tours Error:', error);
@@ -222,7 +400,13 @@ export async function getToursFromAirtable(): Promise<TourRecord[]> {
       childPrice: tour.childPrice,
       infantPrice: tour.infantPrice,
       includes: tour.includes,
-      notes: tour.notes
+      notes: tour.notes,
+      notices: tour.notices && !tour.notices.trim().startsWith('<')
+        ? convertPlainTextToHTML(tour.notices)
+        : tour.notices,
+      forceMajeure: tour.forceMajeure && !tour.forceMajeure.trim().startsWith('<')
+        ? convertPlainTextToHTML(tour.forceMajeure)
+        : tour.forceMajeure
     }));
   }
 }

@@ -1,0 +1,348 @@
+@use "../abstracts" as *;
+
+.success-page {
+  min-height: 100vh;
+  background: $gradient-background;
+  padding-top: $navbar-height + 40px;
+  padding-bottom: 80px;
+
+  @include respond-to(tablet) {
+    padding-top: $navbar-height;
+    padding-bottom: 0;
+    background: $color-white;
+  }
+
+  &__container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 20px;
+
+    @include respond-to(tablet) {
+      padding: 0;
+      max-width: 100%;
+    }
+  }
+
+  &__card {
+    background-color: $color-white;
+    border-radius: $radius-xl;
+    box-shadow: $shadow-card;
+    padding: 40px;
+    @include flex-column;
+    gap: 0;
+
+    @include respond-to(tablet) {
+      border-radius: 0;
+      box-shadow: none;
+      padding: 20px;
+    }
+  }
+
+  &__header {
+    text-align: center;
+    @include flex-column;
+    align-items: center;
+    gap: 30px;
+    padding: 60px 10px 30px;
+
+    @include respond-to(tablet) {
+      padding: 30px 10px;
+    }
+
+    svg {
+      width: 50px;
+      height: 50px;
+    }
+  }
+
+  &__title {
+    @include font-secondary($font-weight-regular);
+    font-size: 32px;
+    color: $color-red-brown;
+    line-height: $line-height-tight;
+
+    @include respond-to(tablet) {
+      font-size: 26px;
+    }
+  }
+
+  &__message {
+    @include font-primary($font-weight-medium);
+    font-size: $font-size-base;
+    color: $color-red-brown;
+    text-align: center;
+    line-height: $line-height-tight;
+  }
+
+  &__divider {
+    height: 1px;
+    background-color: rgba($color-red-brown, 0.2);
+    width: 100%;
+  }
+
+  &__tour-info {
+    @include flex-column;
+    gap: 12px;
+    width: 100%;
+    padding: 15px 0 20px;
+
+    h2 {
+      @include font-primary($font-weight-medium);
+      font-size: $font-size-md;
+      color: $color-red-brown;
+      line-height: $line-height-tight;
+    }
+
+    p {
+      @include font-primary($font-weight-medium);
+      font-size: $font-size-base;
+      color: $color-red-brown;
+      line-height: $line-height-tight;
+    }
+  }
+
+  &__details-list {
+    @include flex-column;
+    gap: 10px;
+    width: 100%;
+    margin-top: 20px;
+    margin-bottom: 20px;
+  }
+
+  &__detail-row {
+    display: flex;
+    width: 100%;
+
+    .label {
+      @include font-primary($font-weight-bold);
+      font-size: 16px;
+      color: $color-red-brown;
+      white-space: nowrap;
+      min-width: 110px;
+    }
+
+    .value {
+      @include font-primary($font-weight-medium);
+      font-size: 16px;
+      color: $color-red-brown;
+    }
+  }
+
+  &__guest-list {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  &__guest-header {
+    background-color: $color-red-brown;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+
+    span {
+      color: $color-white;
+      @include font-primary($font-weight-medium);
+      font-size: 12px;
+      line-height: $line-height-tight;
+
+      @include respond-to(tablet) {
+        font-size: 11px;
+      }
+
+      &:first-child {
+        flex: 1;
+      }
+
+      &:nth-child(2) {
+        width: 120px;
+        text-align: left;
+
+        @include respond-to(tablet) {
+          width: 80px;
+        }
+      }
+
+      &:last-child {
+        width: 120px;
+        text-align: right;
+
+        @include respond-to(tablet) {
+          width: 80px;
+        }
+      }
+    }
+  }
+
+  &__guest-row {
+    padding: 30px 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    @include respond-to(tablet) {
+      padding: 20px 10px;
+    }
+
+    >div:first-child {
+      flex: 1;
+      @include flex-column;
+      gap: 5px;
+    }
+
+    .guest-name {
+      @include font-primary($font-weight-medium);
+      font-size: 16px;
+      color: $color-red-brown;
+      display: block;
+      line-height: $line-height-tight;
+
+      @include respond-to(tablet) {
+        font-size: 11px;
+      }
+    }
+
+    .guest-type {
+      @include font-primary($font-weight-medium);
+      font-size: 12px;
+      color: $color-red-brown;
+      line-height: $line-height-tight;
+
+      @include respond-to(tablet) {
+        font-size: 11px;
+      }
+    }
+
+    .guest-fee {
+      @include font-primary($font-weight-medium);
+      font-size: 12px;
+      color: $color-red-brown;
+      line-height: $line-height-tight;
+      width: 120px;
+      text-align: left;
+
+      @include respond-to(tablet) {
+        font-size: 11px;
+        width: 80px;
+      }
+    }
+
+    .guest-note {
+      @include font-primary($font-weight-medium);
+      font-size: 12px;
+      color: $color-red-brown;
+      line-height: $line-height-tight;
+      width: 120px;
+      text-align: right;
+
+      @include respond-to(tablet) {
+        font-size: 11px;
+        width: 80px;
+      }
+    }
+  }
+
+  &__total {
+    @include flex-between;
+    padding: 30px 10px;
+    margin-top: 0;
+    background-color: transparent;
+    border: none;
+    border-top: 1px solid #000000; // stroke_I7OUGZ
+    border-radius: 0;
+
+    .label {
+      @include font-secondary($font-weight-regular); // H6
+      font-size: 26px;
+      color: $color-red-brown;
+      font-style: normal; // Reset italic if inherited
+    }
+
+    .amount {
+      @include font-secondary($font-weight-regular); // H6
+      font-size: 26px;
+      color: $color-red-brown;
+      font-style: normal; // Reset italic if inherited
+    }
+  }
+
+  &__notices,
+  &__force-majeure,
+  &__footer-note {
+    background-color: transparent;
+    border: none;
+    border-top: 1px solid #000000;
+    padding: 30px 10px;
+    border-radius: 0;
+    margin-top: 0; // Stacked directly
+
+    h3 {
+      @include font-secondary($font-weight-regular);
+      font-size: 26px;
+      color: $color-red-brown;
+      margin-bottom: 20px;
+      font-style: normal;
+      line-height: $line-height-tight;
+    }
+
+    .content {
+      font-size: 12px;
+      font-weight: 500;
+      line-height: $line-height-tight;
+      color: $color-red-brown;
+      text-align: left;
+
+      ul {
+        list-style-type: disc;
+        padding-left: 20px;
+        margin: 0;
+      }
+
+      li {
+        margin-bottom: 12px;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        // Style for nested lists
+        ul {
+          margin-top: 8px;
+          padding-left: 20px;
+          list-style-type: circle;
+
+          li {
+            margin-bottom: 8px;
+          }
+        }
+      }
+
+      p.no-bullet {
+        margin-bottom: 12px;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+
+      strong {
+        font-weight: 700;
+      }
+
+      u {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  &__actions {
+    @include flex-center;
+    margin-top: 20px;
+
+    .btn-home {
+      @include button-primary;
+      min-width: 200px;
+      text-align: center;
+    }
+  }
+}

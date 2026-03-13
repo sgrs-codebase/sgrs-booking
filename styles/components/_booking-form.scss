@@ -10,13 +10,13 @@
   width: 100%;
   max-width: $form-width;
   padding-bottom: 200px; // Space for sticky footer
-  
+
   &__section {
     @include flex-column;
     gap: $spacing-xl;
     width: 100%;
   }
-  
+
   &__notice {
     @include font-primary($font-weight-medium);
     font-size: $font-size-base;
@@ -26,7 +26,7 @@
     text-align: center;
     width: 100%;
   }
-  
+
   &__actions {
     display: flex;
     justify-content: flex-end;
@@ -40,42 +40,42 @@
   @include flex-column;
   gap: $spacing-xl;
   width: 100%;
-  
+
   &__header {
     @include flex-column;
     gap: $spacing-md;
     color: $color-red-brown;
   }
-  
+
   &__title {
     @include font-primary($font-weight-bold);
     font-size: $font-size-md;
     line-height: $line-height-tight;
   }
-  
+
   &__description {
     @include font-primary($font-weight-medium);
     font-size: $font-size-base;
     line-height: $line-height-tight;
   }
-  
+
   &__fields {
     @include flex-column;
     gap: $spacing-lg;
     width: 100%;
   }
-  
+
   &__row {
     display: flex;
     gap: $spacing-xl;
     width: 100%;
-    
+
     &--full {
       .form-field {
         flex: 1;
       }
     }
-    
+
     &--thirds {
       .form-field {
         flex: 1;
@@ -91,27 +91,56 @@
   gap: $spacing-base;
   flex: 1;
   min-width: 0;
-  
+
   &__label {
     @include font-primary($font-weight-medium);
     font-size: $font-size-base;
     line-height: $line-height-tight;
     color: $color-red-brown;
   }
-  
+
   &__input-wrapper {
     position: relative;
     width: 100%;
+
+    // NEW: Style for combined date-time input
+    &--combined {
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: flex-start !important;
+      border: 2px solid $color-red-brown;
+      border-radius: 999px;
+      height: 72px;
+      padding: 0 20px;
+      background-color: transparent;
+
+      input {
+        flex: 1;
+        border: none !important;
+        background: transparent !important;
+        height: 100% !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+        font-size: 26px !important;
+        color: $color-red-brown !important;
+        width: auto !important;
+
+        &:focus {
+          outline: none;
+        }
+      }
+    }
   }
-  
+
   &__input {
     @include input-base;
     height: 36px;
     padding: 0 20px;
-    
+
     &--date {
       padding-right: 50px;
-      
+
       // Remove default calendar icon in WebKit browsers
       &::-webkit-calendar-picker-indicator {
         display: none;
@@ -119,7 +148,7 @@
       }
     }
   }
-  
+
   &__select {
     @include input-base;
     height: 36px;
@@ -129,12 +158,22 @@
     background-position: right 20px center;
     cursor: pointer;
     padding: 0 20px;
-    
+
     &:focus {
       border-width: 2px;
     }
   }
-  
+
+  &__textarea {
+    @include input-base;
+    min-height: 80px;
+    resize: vertical;
+    padding: 18px $spacing-xl;
+    line-height: $line-height-normal;
+    font-family: 'Mona Sans', sans-serif;
+    vertical-align: top;
+  }
+
   &__icon {
     position: absolute;
     right: 10px;
@@ -146,23 +185,24 @@
     background-color: $color-grey;
     border-radius: 50%;
     cursor: pointer;
-    
-    svg, img {
+
+    svg,
+    img {
       width: 18.6px;
       height: 18.6px;
     }
   }
-  
+
   // Phone input with country code
   &--phone {
     .form-field__input-wrapper {
       position: relative;
     }
-    
+
     .form-field__input {
       padding-left: 100px;
     }
-    
+
     .form-field__country-code {
       position: absolute;
       left: 0;
@@ -174,7 +214,7 @@
       gap: $spacing-sm;
       border-top-left-radius: $radius-pill;
       border-bottom-left-radius: $radius-pill;
-      
+
       .flag {
         width: 30px;
         height: 20px;
@@ -182,7 +222,7 @@
         border: 0.5px solid $color-grey-blue;
         box-shadow: $shadow-dropdown;
         overflow: hidden;
-        
+
         img {
           @include image-cover;
         }
@@ -197,26 +237,26 @@
   gap: $spacing-xl;
   align-items: flex-end;
   width: 100%;
-  
+
   &__picker {
     @include flex-column;
     gap: $spacing-base;
     width: 100%;
   }
-  
+
   &__label {
     @include text-subheading;
   }
-  
+
   &__input-wrapper {
     position: relative;
     width: 100%;
-    
+
     input {
       @include input-date;
       width: 100%;
       cursor: pointer;
-      
+
       &:read-only {
         background-color: $color-white;
       }
@@ -226,6 +266,68 @@
         cursor: not-allowed;
       }
     }
+
+    // Combined date-time input layout
+    &--combined {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+      border: 2px solid $color-red-brown;
+      border-radius: 999px;
+      height: 72px;
+      padding: 0 20px;
+      background-color: $color-white;
+      gap: 0;
+
+      input {
+        flex: 1;
+        border: none !important;
+        background: transparent !important;
+        height: 100% !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+        font-size: 20px !important;
+        font-family: 'Mona Sans', sans-serif !important;
+        font-weight: 500 !important;
+        color: $color-red-brown !important;
+        width: auto !important;
+        min-width: 0;
+
+        &:focus {
+          outline: none;
+        }
+      }
+    }
+  }
+
+  // Time wrapper inside combined input
+  &__time-wrapper {
+    display: flex;
+    align-items: center;
+    height: 40px;
+    border-left: 1px solid rgba($color-red-brown, 0.2);
+    padding-left: 15px;
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+
+  // Time select dropdown
+  &__time-select {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 20px;
+    color: $color-red-brown;
+    font-family: 'Mona Sans', sans-serif;
+    cursor: pointer;
+    font-weight: 500;
+    padding-right: 5px;
+    appearance: none;
+
+    &:focus {
+      outline: none;
+    }
   }
 
   // New styles for date range
@@ -233,7 +335,7 @@
     display: flex;
     gap: $spacing-lg;
     width: 100%;
-    
+
     @media (max-width: 768px) {
       flex-direction: column;
       gap: $spacing-md;
@@ -251,24 +353,24 @@
     font-size: $font-size-sm;
     color: rgba($color-red-brown, 0.7);
   }
-  
+
   &__icon {
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
+    position: static;
     width: 48px;
     height: 48px;
     @include flex-center;
     pointer-events: none;
-    
+    flex-shrink: 0;
+    margin-left: auto;
+
     .icon-container {
       @include flex-center;
       background-color: $color-grey;
       border-radius: 999px;
       padding: $spacing-sm;
-      
-      svg, img {
+
+      svg,
+      img {
         width: 24px;
         height: 24px;
       }
@@ -290,31 +392,31 @@
   width: 90%;
   max-height: 90vh;
   overflow: hidden;
-  
+
   &__header {
     @include flex-between;
     gap: $spacing-sm;
     padding: $spacing-lg $spacing-lg $spacing-xl $spacing-lg;
     border-bottom: 1px solid $color-red-brown;
   }
-  
+
   &__header-content {
     @include flex-column;
     gap: $spacing-lg;
     flex: 1;
   }
-  
+
   &__label {
     @include font-primary($font-weight-medium);
     font-size: $font-size-base;
     color: rgba($color-red-brown, 0.7);
     line-height: $line-height-tight;
   }
-  
+
   &__selected-date {
     @include text-subheading;
   }
-  
+
   &__close-btn {
     @include flex-center;
     width: 48px;
@@ -323,17 +425,17 @@
     background-color: transparent;
     cursor: pointer;
     transition: background-color $transition-fast;
-    
+
     &:hover {
       background-color: rgba($color-red-brown, 0.05);
     }
   }
-  
+
   &__month-selector {
     @include flex-between;
     padding: $spacing-xs $spacing-md;
   }
-  
+
   &__month-btn {
     @include flex-center;
     gap: $spacing-sm;
@@ -342,11 +444,11 @@
     background-color: transparent;
     cursor: pointer;
     transition: background-color $transition-fast;
-    
+
     &:hover {
       background-color: rgba($color-red-brown, 0.05);
     }
-    
+
     span {
       @include font-primary($font-weight-medium);
       font-size: $font-size-base;
@@ -354,12 +456,12 @@
       line-height: $line-height-tight;
     }
   }
-  
+
   &__month-controls {
     display: flex;
     gap: 0;
   }
-  
+
   &__nav-btn {
     @include flex-center;
     width: 48px;
@@ -368,23 +470,23 @@
     background-color: transparent;
     cursor: pointer;
     transition: background-color $transition-fast;
-    
+
     &:hover {
       background-color: rgba($color-red-brown, 0.05);
     }
   }
-  
+
   &__calendar {
     padding: 0 $spacing-md;
   }
-  
+
   &__weekdays {
     display: flex;
     height: 48px;
     align-items: center;
     justify-content: center;
-    
-    > div {
+
+    >div {
       flex: 1;
       @include flex-center;
       @include font-primary($font-weight-bold);
@@ -393,20 +495,20 @@
       line-height: $line-height-tight;
     }
   }
-  
+
   &__week {
     display: flex;
     height: 48px;
     align-items: center;
     justify-content: center;
   }
-  
+
   &__day {
     flex: 1;
     @include flex-center;
     padding: $spacing-xs 0;
     position: relative;
-    
+
     button {
       @include flex-center;
       width: 40px;
@@ -417,44 +519,45 @@
       transition: all $transition-fast;
       position: relative;
       z-index: 2;
-      
+
       @include font-primary($font-weight-medium);
       font-size: $font-size-base;
       color: $color-red-brown;
       line-height: $line-height-tight;
-      
+
       &:hover {
         background-color: rgba($color-red-brown, 0.1);
       }
-      
+
       &.selected {
         background-color: $color-red-brown;
         color: $color-white;
         border: none;
       }
-      
+
       &.today {
         font-weight: $font-weight-bold;
       }
-      
+
       &:disabled {
         opacity: 0.3;
         cursor: not-allowed;
-        
+
         &:hover {
           background-color: transparent;
         }
       }
     }
-    
+
     // Range Selection Styles
-    &--start, &--end {
+    &--start,
+    &--end {
       button {
         background-color: $color-red-brown;
         color: $color-white;
         border: none;
       }
-      
+
       &::before {
         content: '';
         position: absolute;
@@ -466,26 +569,26 @@
         z-index: 1;
       }
     }
-    
+
     &--start::before {
       right: 0;
       border-top-left-radius: 999px;
       border-bottom-left-radius: 999px;
     }
-    
+
     &--end::before {
       left: 0;
       border-top-right-radius: 999px;
       border-bottom-right-radius: 999px;
     }
-    
+
     &--in-range {
       button {
         background-color: rgba($color-red-brown, 0.1);
         border-radius: 0;
         width: 100%;
         height: 32px;
-        
+
         &:hover {
           background-color: rgba($color-red-brown, 0.2);
         }
@@ -498,24 +601,24 @@
       }
     }
   }
-  
+
   &__actions {
     @include flex-between;
     padding: $spacing-sm $spacing-md $spacing-md;
   }
-  
+
   &__action-btn {
     padding: $spacing-sm $spacing-base;
     border-radius: 999px;
     background-color: transparent;
     cursor: pointer;
     transition: background-color $transition-fast;
-    
+
     @include font-primary($font-weight-medium);
     font-size: $font-size-base;
     color: $color-red-brown;
     line-height: $line-height-tight;
-    
+
     &:hover {
       background-color: rgba($color-red-brown, 0.05);
     }
@@ -526,16 +629,16 @@
     padding: 0 $spacing-md;
     max-height: 300px;
     overflow-y: auto;
-    
+
     // Custom scrollbar
     &::-webkit-scrollbar {
       width: 4px;
     }
-    
+
     &::-webkit-scrollbar-track {
       background: transparent;
     }
-    
+
     &::-webkit-scrollbar-thumb {
       background-color: rgba($color-red-brown, 0.2);
       border-radius: 4px;
@@ -547,25 +650,25 @@
   @include flex-column;
   gap: $spacing-lg;
   padding: $spacing-md 0;
-  
+
   &__year-section {
     @include flex-column;
     gap: $spacing-sm;
   }
-  
+
   &__year-label {
     @include font-primary($font-weight-bold);
     font-size: $font-size-md;
     color: $color-red-brown;
     padding-left: $spacing-xs;
   }
-  
+
   &__months {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: $spacing-sm;
   }
-  
+
   &__month-btn {
     @include flex-center;
     height: 36px;
@@ -573,15 +676,15 @@
     background-color: transparent;
     cursor: pointer;
     transition: all $transition-fast;
-    
+
     @include font-primary($font-weight-medium);
     font-size: $font-size-sm;
     color: $color-red-brown;
-    
+
     &:hover {
       background-color: rgba($color-red-brown, 0.05);
     }
-    
+
     &.current {
       background-color: $color-red-brown;
       color: $color-white;
@@ -602,18 +705,18 @@
   @include flex-column;
   gap: $spacing-base;
   width: 100%;
-  
+
   &__label {
     @include text-subheading;
   }
-  
+
   // Day Tour Style - Separate bordered pill rows
   &--day-tour {
     .guest-amount-section__items {
       @include flex-column;
       gap: $spacing-base;
     }
-    
+
     .guest-amount-section__item {
       border: 2px solid $color-red-brown;
       border-radius: $radius-pill;
@@ -621,7 +724,7 @@
       height: 56px;
       @include flex-between;
       align-items: center;
-      
+
       @media (max-width: 768px) {
         height: auto;
         flex-direction: column;
@@ -630,29 +733,29 @@
         border-radius: $radius-lg;
       }
     }
-    
+
     .guest-amount-section__item-info {
       @include flex-center;
       gap: $spacing-base;
-      
+
       @media (max-width: 768px) {
         flex-direction: column;
         width: 100%;
       }
     }
-    
+
     .guest-amount-section__item-label {
       @include font-primary($font-weight-bold);
       font-size: $font-size-md;
       color: $color-red-brown;
       line-height: $line-height-tight;
-      
+
       span {
         @include font-primary($font-weight-bold);
         font-size: $font-size-base;
       }
     }
-    
+
     .guest-amount-section__item-price {
       @include font-secondary($font-weight-bold, italic);
       font-size: $font-size-lg;
@@ -661,60 +764,60 @@
       white-space: nowrap;
     }
   }
-  
+
   // Overnight Tour Style - Room configuration in bordered box
   &--overnight-tour {
     .guest-amount-section__items {
       @include flex-column;
       gap: $spacing-base;
     }
-    
+
     .guest-amount-section__room {
       border: 2px solid $color-red-brown;
       border-radius: 30px;
       padding: $spacing-xl 50px;
       @include flex-column;
       gap: 27px;
-      
+
       @media (max-width: 768px) {
         padding: $spacing-lg $spacing-base;
         border-radius: $radius-lg;
       }
     }
-    
+
     .guest-amount-section__room-title {
       @include font-primary($font-weight-bold);
       font-size: $font-size-md;
       color: $color-red-brown;
       line-height: $line-height-tight;
     }
-    
+
     .guest-amount-section__room-guests {
       @include flex-column;
       gap: $spacing-base;
     }
-    
+
     .guest-amount-section__room-row {
       @include flex-between;
       align-items: center;
-      
+
       &--two-cols {
         display: flex;
         gap: $spacing-base;
-        
+
         @media (max-width: 768px) {
           flex-direction: column;
           align-items: stretch;
         }
-        
-        > div {
+
+        >div {
           flex: 1;
           @include flex-between;
           align-items: center;
         }
       }
     }
-    
+
     .guest-amount-section__room-label {
       @include font-primary($font-weight-medium);
       font-size: $font-size-base;
@@ -722,18 +825,18 @@
       line-height: $line-height-tight;
       min-width: 160px;
     }
-    
+
     .guest-amount-section__room-total {
       @include flex-between;
       align-items: flex-end;
-      
+
       .label {
         @include font-primary($font-weight-bold);
         font-size: $font-size-md;
         color: $color-red-brown;
         line-height: $line-height-tight;
       }
-      
+
       .price {
         @include font-secondary($font-weight-bold, italic);
         font-size: $font-size-lg;
@@ -741,7 +844,7 @@
         line-height: $line-height-tight;
       }
     }
-    
+
     .guest-amount-section__add-room {
       border: 2px solid $color-red-brown;
       border-radius: $radius-pill;
@@ -751,11 +854,11 @@
       background-color: transparent;
       cursor: pointer;
       transition: all $transition-base;
-      
+
       &:hover {
         background-color: rgba($color-red-brown, 0.05);
       }
-      
+
       .label {
         @include font-primary($font-weight-bold);
         font-size: $font-size-md;
@@ -774,7 +877,7 @@
   background-color: $color-white;
   padding: 5px;
   border-radius: 10px;
-  
+
   &__button {
     @include flex-center;
     width: 20px;
@@ -784,20 +887,20 @@
     border: none;
     cursor: pointer;
     transition: all $transition-fast;
-    
+
     &:hover {
       opacity: 0.7;
     }
-    
+
     &:disabled {
       opacity: 0.3;
       cursor: not-allowed;
-      
+
       &:hover {
         opacity: 0.3;
       }
     }
-    
+
     span {
       @include font-primary($font-weight-medium);
       font-size: $font-size-base;
@@ -805,7 +908,7 @@
       color: $color-black;
     }
   }
-  
+
   &__value {
     @include font-primary($font-weight-medium);
     font-size: $font-size-md;
@@ -831,7 +934,7 @@
   border-radius: $radius-full;
   border: 1px solid $color-red-brown;
   gap: $spacing-sm;
-  
+
   &:hover {
     background-color: $color-red-brown;
     color: $color-white;

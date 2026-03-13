@@ -15,13 +15,13 @@ export default function Navbar() {
         <Image
           src={logoSrc}
           alt="Saigon River Star"
-          width={140}
-          height={50}
+          width={110}
+          height={40}
           priority
         />
       </Link>
-      
-      <button 
+
+      <button
         className={`navbar__toggle ${isOpen ? 'active' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Toggle menu"
@@ -35,8 +35,14 @@ export default function Navbar() {
         <Link href="https://www.saigonriverstar.com/about-us" className="navbar__link">
           About Us
         </Link>
-        <Link href="https://www.saigonriverstar.com/journeys" className="navbar__link">
+        <Link href="https://www.saigonriverstar.com/insights" className="navbar__link">
+          Insights
+        </Link>
+        <Link href="https://www.saigonriverstar.com/journeys" className="navbar__link navbar__link--dropdown">
           Tours
+          <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </Link>
         <Link href="https://www.saigonriverstar.com/contact" className="navbar__link">
           Contact

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getToursFromAirtable, saveOrderToAirtable } from '@/lib/airtable';
+import { getToursFromAirtable, saveOrderToAirtable, generateOrderId } from '@/lib/airtable';
 import { buildPaymentUrl, OnePayParams } from '@/lib/onepay';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { tourId, adults, children, infants, customerInfo, date, returnDate, guests } = body;
+    const { tourId, adults, children, infants, customerInfo, date, returnDate, time, guests } = body;
 
     // 1. Validate Tour (Fetch from Airtable)
     const tours = await getToursFromAirtable();
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Calculate Price (Server-side validation)
     const amount = (adults * tour.adultPrice) + (children * tour.childPrice) + (infants * tour.infantPrice);
-    
+
     if (amount === 0) {
       return NextResponse.json({ error: 'Invalid Amount' }, { status: 400 });
     }
@@ -34,19 +34,21 @@ export async function POST(request: NextRequest) {
     console.log('Received Customer Info:', customerInfo);
 
     if (!merchant || !accessCode || !secret) {
-      console.error('Missing OnePay Configuration:', { 
-        merchant: !!merchant, 
-        accessCode: !!accessCode, 
-        secret: !!secret 
+      console.error('Missing OnePay Configuration:', {
+        merchant: !!merchant,
+        accessCode: !!accessCode,
+        secret: !!secret
       });
       return NextResponse.json({ error: 'Payment Gateway Configuration Error' }, { status: 500 });
     }
 
-    // 4. Prepare OnePay Parameters
+    // 4. Generate OrderID in new format: TOUR{number}.{ddMMyyyy}.{sequence}
+    const orderId = await generateOrderId(tourId, date);
+
+    // 5. Prepare OnePay Parameters
     // Note: OnePay requires amount in VND * 100
     const amountInCents = (amount * 100).toString();
-    const orderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    
+
     // Get client IP - simplistic approach for Next.js App Router
     const forwardedFor = request.headers.get('x-forwarded-for');
     const clientIp = forwardedFor ? forwardedFor.split(',')[0] : '127.0.0.1';
@@ -65,26 +67,24 @@ export async function POST(request: NextRequest) {
     };
 
     let customerEmail = '';
-     let customerPhone = '';
-     try {
-        customerEmail = customerInfo?.email ? String(customerInfo.email).trim() : '';
-        // Strict Phone Sanitization: Digits only
-        customerPhone = customerInfo?.phone ? String(customerInfo.phone).replace(/\D/g, '') : '';
-     } catch (e) {
-        console.error('Customer info parsing error:', e);
-     }
- 
-     // Strict OrderInfo Sanitization: Alphanumeric and spaces only, no special chars
-     const orderInfoSource = `Booking ${tour.name} ${customerEmail}`;
-     const orderInfo = sanitize(orderInfoSource)
-       .replace(/[^a-zA-Z0-9\s]/g, "") // Remove ALL special chars including hyphens/dots
-       .substring(0, 100); // Limit length strictly
-     
-     const safeOrderId = sanitize(orderId);
+    let customerPhone = '';
+    try {
+      customerEmail = customerInfo?.email ? String(customerInfo.email).trim() : '';
+      // Strict Phone Sanitization: Digits only
+      customerPhone = customerInfo?.phone ? String(customerInfo.phone).replace(/\D/g, '') : '';
+    } catch (e) {
+      console.error('Customer info parsing error:', e);
+    }
+
+    // Strict OrderInfo Sanitization: Alphanumeric and spaces only, no special chars
+    const orderInfoSource = `Booking ${tour.name} ${customerEmail}`;
+    const orderInfo = sanitize(orderInfoSource)
+      .replace(/[^a-zA-Z0-9\s]/g, "") // Remove ALL special chars including hyphens/dots
+      .substring(0, 100); // Limit length strictly
 
     // Save "Pending" Order to Airtable
     await saveOrderToAirtable({
-      OrderID: safeOrderId,
+      OrderID: orderId,
       Timestamp: new Date().toISOString(),
       CustomerName: customerInfo ? `${customerInfo.firstName} ${customerInfo.lastName}` : 'Guest',
       Email: customerEmail,
@@ -96,7 +96,8 @@ export async function POST(request: NextRequest) {
       OnePayRef: '',
       FullGuestDetails: JSON.stringify(guests || []),
       TravelDate: date, // Single Date
-      ReturnDate: returnDate // Optional Return Date
+      ReturnDate: returnDate, // Optional Return Date
+      DepartureTime: time // Save departure time
     });
 
     const params: OnePayParams = {
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
       vpc_Command: 'pay',
       vpc_Currency: 'VND',
       vpc_Locale: 'vn', // Changed from 'en' to 'vn' per requirement
-      vpc_MerchTxnRef: safeOrderId,
+      vpc_MerchTxnRef: orderId,
       vpc_Merchant: merchant,
       vpc_OrderInfo: orderInfo,
       vpc_ReturnURL: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/ipn`,

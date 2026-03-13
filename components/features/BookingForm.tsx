@@ -7,35 +7,35 @@ import Image from 'next/image';
 // Calendar Icon SVG
 const CalendarIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z" stroke="#56231E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M16 2V6" stroke="#56231E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M8 2V6" stroke="#56231E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M3 10H21" stroke="#56231E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z" stroke="#56231E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M16 2V6" stroke="#56231E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M8 2V6" stroke="#56231E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M3 10H21" stroke="#56231E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
 // Chevron Icons
 const ChevronLeft = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M15 18L9 12L15 6" stroke="#49454F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M15 18L9 12L15 6" stroke="#49454F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
 const ChevronRight = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M9 18L15 12L9 6" stroke="#49454F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M9 18L15 12L9 6" stroke="#49454F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
 const ChevronDown = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-    <path d="M4.5 6.75L9 11.25L13.5 6.75" stroke="#49454F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M4.5 6.75L9 11.25L13.5 6.75" stroke="#49454F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
 const CloseIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M18 6L6 18M6 6L18 18" stroke="#49454F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M18 6L6 18M6 6L18 18" stroke="#49454F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -85,7 +85,7 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
   const [tempStartDate, setTempStartDate] = useState(selectedDate);
   const [tempReturnDate, setTempReturnDate] = useState(selectedReturnDate || '');
   const [viewMode, setViewMode] = useState<'calendar' | 'month-year'>('calendar');
-  
+
   // Reset local state when modal opens
   if (!isOpen && (tempStartDate !== selectedDate || tempReturnDate !== (selectedReturnDate || ''))) {
     // This effect logic should be inside useEffect ideally, but for this component structure:
@@ -102,9 +102,9 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
   } else if (!isOpen && prevIsOpen) {
     setPrevIsOpen(false);
   }
-  
+
   if (!isOpen) return null;
-  
+
   const formatDisplayDate = (dateStr: string) => {
     if (!dateStr) return 'Select date';
     const date = new Date(dateStr);
@@ -114,7 +114,7 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
       day: 'numeric'
     });
   };
-  
+
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -122,22 +122,22 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
     const startingDayOfWeek = firstDay.getDay();
-    
+
     const days: (number | null)[] = [];
-    
+
     // Add empty slots for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
     }
-    
+
     // Add all days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       days.push(day);
     }
-    
+
     return days;
   };
-  
+
   const handleDateClick = (day: number) => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
@@ -173,7 +173,7 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
     const currentStr = new Date(Date.UTC(year, month, day)).toISOString().split('T')[0];
-    
+
     if (isRange) {
       if (currentStr === tempStartDate) return 'start';
       if (currentStr === tempReturnDate) return 'end';
@@ -182,7 +182,7 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
     }
     return currentStr === selectedDate ? 'selected' : '';
   };
-  
+
   const handleMonthYearSelect = (month: number, year: number) => {
     setCurrentMonth(new Date(year, month, 1));
     setViewMode('calendar');
@@ -191,7 +191,7 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
   const handlePrevMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
   };
-  
+
   const handleNextMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
   };
@@ -211,23 +211,23 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
       onClose();
     }
   };
-  
+
   const days = getDaysInMonth(currentMonth);
   const weeks: (number | null)[][] = [];
   for (let i = 0; i < days.length; i += 7) {
     weeks.push(days.slice(i, i + 7));
   }
-  
+
   const monthYear = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   const currentYear = currentMonth.getFullYear();
-  
+
   // Generate years for month/year view (current year - 1 to current year + 5)
   const years = Array.from({ length: 7 }, (_, i) => currentYear - 1 + i);
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
-  
+
   return (
     <>
       <div className="date-picker-overlay" onClick={onClose} />
@@ -240,7 +240,7 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
             <div className="date-picker-modal__selected-date">
               {isRange ? (
                 <>
-                  {formatDisplayDate(tempStartDate)} 
+                  {formatDisplayDate(tempStartDate)}
                   {tempReturnDate && ` - ${formatDisplayDate(tempReturnDate)}`}
                 </>
               ) : (
@@ -252,11 +252,11 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
             <CloseIcon />
           </button>
         </div>
-        
+
         {viewMode === 'calendar' ? (
           <>
             <div className="date-picker-modal__month-selector">
-              <button 
+              <button
                 type="button"
                 className="date-picker-modal__month-btn"
                 onClick={() => setViewMode('month-year')}
@@ -273,7 +273,7 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
                 </button>
               </div>
             </div>
-            
+
             <div className="date-picker-modal__calendar">
               <div className="date-picker-modal__weekdays">
                 <div>S</div>
@@ -284,7 +284,7 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
                 <div>F</div>
                 <div>S</div>
               </div>
-              
+
               {weeks.map((week, weekIndex) => (
                 <div key={weekIndex} className="date-picker-modal__week">
                   {week.map((day, dayIndex) => {
@@ -317,9 +317,8 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
                       <button
                         type="button"
                         key={month}
-                        className={`month-year-grid__month-btn ${
-                          currentMonth.getMonth() === index && currentMonth.getFullYear() === year ? 'current' : ''
-                        }`}
+                        className={`month-year-grid__month-btn ${currentMonth.getMonth() === index && currentMonth.getFullYear() === year ? 'current' : ''
+                          }`}
                         onClick={() => handleMonthYearSelect(index, year)}
                       >
                         {month.slice(0, 3)}
@@ -331,7 +330,7 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
             </div>
           </div>
         )}
-        
+
         <div className="date-picker-modal__actions">
           <div></div>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -357,6 +356,7 @@ interface GuestInfo {
   issueDate: string;
   expiryDate: string;
   issuingAuthority: string;
+  note?: string; // Optional field
 }
 
 interface BookingFormProps {
@@ -368,6 +368,7 @@ interface BookingFormProps {
   onSubmit: (data: {
     date: string;
     returnDate?: string;
+    time?: string;
     adults: number;
     children: number;
     infants: number;
@@ -401,18 +402,19 @@ const emptyGuestInfo: GuestInfo = {
 };
 
 // export default function BookingForm({ tourId, tourType, adultPrice, childPrice, infantPrice, onSubmit }: BookingFormProps) {
-export default function BookingForm({ 
-  tourType, 
-  adultPrice, 
-  childPrice, 
-  infantPrice, 
-  currentStep, 
-  onStepChange, 
+export default function BookingForm({
+  tourType,
+  adultPrice,
+  childPrice,
+  infantPrice,
+  currentStep,
+  onStepChange,
   onPriceChange,
   onSubmit
 }: BookingFormProps) {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedReturnDate, setSelectedReturnDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('08:00'); // Default time
   const [showDatePicker, setShowDatePicker] = useState(false);
   // const [datePickerMode, setDatePickerMode] = useState<'start' | 'return'>('start');
   const [adults, setAdults] = useState(1);
@@ -421,14 +423,14 @@ export default function BookingForm({
   const [rooms, setRooms] = useState([{ adults: 1, children: 0, infants: 0 }]);
   const [guests, setGuests] = useState<GuestInfo[]>([{ ...emptyGuestInfo }]);
 
-  const totalGuests = tourType === 'overnight-tour' 
+  const totalGuests = tourType === 'overnight-tour'
     ? rooms.reduce((sum, room) => sum + room.adults + room.children + room.infants, 0)
     : adults + children + infants;
-    
+
   useEffect(() => {
     const calculatePrice = () => {
       if (tourType === 'overnight-tour') {
-        return rooms.reduce((sum, room) => 
+        return rooms.reduce((sum, room) =>
           sum + (room.adults * adultPrice) + (room.children * childPrice) + (room.infants * infantPrice), 0);
       }
       return (adults * adultPrice) + (children * childPrice) + (infants * infantPrice);
@@ -500,34 +502,28 @@ export default function BookingForm({
 
     // Validation for Step 3 (Guest Info)
     if (currentStep === 3) {
-      let isValid = true;
-      const invalidGuests: number[] = [];
-
-      guests.forEach((guest, index) => {
-        // Basic validation: First Name, Last Name are required
-        if (!guest.firstName?.trim() || !guest.lastName?.trim()) {
-          isValid = false;
-          invalidGuests.push(index + 1);
+      // Validate Guest Info
+      for (let i = 0; i < guests.length; i++) {
+        const g = guests[i];
+        if (!g.firstName || !g.lastName || !g.gender || !g.dateOfBirth || !g.citizenship || !g.residence || !g.idNumber || !g.issueDate || !g.expiryDate || !g.issuingAuthority) {
+          // You might want to add a toast or error state here
+          alert('Please fill in all required fields for all guests');
+          return;
         }
-        // If email/phone are provided, they should be valid (basic check)
-        // Note: We don't force email/phone for all guests, maybe just primary?
-        // For now, enforcing Name is a good start.
-      });
-
-      if (!isValid) {
-        alert(`Please provide valid names for guest(s): ${invalidGuests.join(', ')}`);
-        return;
       }
-    }
 
-    onSubmit({
-      date: selectedDate,
-      returnDate: selectedReturnDate,
-      adults: tourType === 'overnight-tour' ? rooms.reduce((sum, r) => sum + r.adults, 0) : adults,
-      children: tourType === 'overnight-tour' ? rooms.reduce((sum, r) => sum + r.children, 0) : children,
-      infants: tourType === 'overnight-tour' ? rooms.reduce((sum, r) => sum + r.infants, 0) : infants,
-      guests,
-    });
+      // Submit form
+      onSubmit({
+        date: selectedDate,
+        returnDate: selectedReturnDate,
+        time: selectedTime,
+        adults: tourType === 'overnight-tour' ? rooms.reduce((sum, r) => sum + r.adults, 0) : adults,
+        children: tourType === 'overnight-tour' ? rooms.reduce((sum, r) => sum + r.children, 0) : children,
+        infants: tourType === 'overnight-tour' ? rooms.reduce((sum, r) => sum + r.infants, 0) : infants,
+        guests,
+      });
+      return;
+    }
   };
 
   const addRoom = () => {
@@ -545,7 +541,7 @@ export default function BookingForm({
       <BookingSteps
         steps={BOOKING_STEPS}
         currentStep={currentStep}
-        selectedDate={tourType === 'overnight-tour' && selectedReturnDate 
+        selectedDate={tourType === 'overnight-tour' && selectedReturnDate
           ? `${formatDisplayDate(selectedDate)} - ${formatDisplayDate(selectedReturnDate)}`
           : formatDisplayDate(selectedDate)}
         guestCount={totalGuests}
@@ -558,11 +554,11 @@ export default function BookingForm({
           <div className="date-time-section">
             <div className="date-time-section__picker">
               <label className="date-time-section__label">Check availability:</label>
-              <div className="date-time-section__input-wrapper">
+              <div className="date-time-section__input-wrapper date-time-section__input-wrapper--combined">
                 <input
                   type="text"
                   value={
-                    tourType === 'overnight-tour' && selectedReturnDate 
+                    tourType === 'overnight-tour' && selectedReturnDate
                       ? `${formatDisplayDate(selectedDate)} - ${formatDisplayDate(selectedReturnDate)}`
                       : formatDisplayDate(selectedDate)
                   }
@@ -570,6 +566,29 @@ export default function BookingForm({
                   readOnly
                   placeholder={tourType === 'overnight-tour' ? "Select dates" : "DD/MM/YYYY"}
                 />
+
+                <div className="date-time-section__time-wrapper">
+                  <select
+                    className="date-time-section__time-select"
+                    value={selectedTime}
+                    onChange={(e) => setSelectedTime(e.target.value)}
+                  >
+                    <option value="07:00">07:00</option>
+                    <option value="07:30">07:30</option>
+                    <option value="08:00">08:00</option>
+                    <option value="08:30">08:30</option>
+                    <option value="09:00">09:00</option>
+                    <option value="09:30">09:30</option>
+                    <option value="10:00">10:00</option>
+                    <option value="13:00">13:00</option>
+                    <option value="13:30">13:30</option>
+                    <option value="14:00">14:00</option>
+                    <option value="17:00">17:00</option>
+                    <option value="18:00">18:00</option>
+                    <option value="19:00">19:00</option>
+                  </select>
+                </div>
+
                 <div className="date-time-section__icon">
                   <div className="icon-container">
                     <CalendarIcon />
@@ -608,7 +627,7 @@ export default function BookingForm({
                   {formatPrice(adultPrice)} VND
                 </div>
               </div>
-              
+
               <div className="guest-amount-section__item">
                 <div className="guest-amount-section__item-info">
                   <div className="guest-amount-section__item-label">
@@ -620,7 +639,7 @@ export default function BookingForm({
                   {formatPrice(childPrice)} VND
                 </div>
               </div>
-              
+
               <div className="guest-amount-section__item">
                 <div className="guest-amount-section__item-info">
                   <div className="guest-amount-section__item-label">
@@ -634,7 +653,7 @@ export default function BookingForm({
               </div>
             </div>
           </div>
-          
+
           <div className="booking-form__actions" style={{ gap: '16px' }}>
             <button type="button" className="btn-secondary" onClick={handlePrevStep}>
               Back
@@ -657,59 +676,59 @@ export default function BookingForm({
                   <div className="guest-amount-section__room-title">
                     Room {index + 1} Configuration
                   </div>
-                  
+
                   <div className="guest-amount-section__room-guests">
                     <div className="guest-amount-section__room-row guest-amount-section__room-row--two-cols">
                       <div>
                         <span className="guest-amount-section__room-label">
                           Adults (Aged 18+)
                         </span>
-                        <NumberCounter 
-                          value={room.adults} 
-                          onChange={(val) => updateRoom(index, 'adults', val)} 
-                          min={1} 
-                          max={10} 
+                        <NumberCounter
+                          value={room.adults}
+                          onChange={(val) => updateRoom(index, 'adults', val)}
+                          min={1}
+                          max={10}
                         />
                       </div>
                       <div>
                         <span className="guest-amount-section__room-label">
                           Children (Aged 4-12)
                         </span>
-                        <NumberCounter 
-                          value={room.children} 
-                          onChange={(val) => updateRoom(index, 'children', val)} 
-                          min={0} 
-                          max={10} 
+                        <NumberCounter
+                          value={room.children}
+                          onChange={(val) => updateRoom(index, 'children', val)}
+                          min={0}
+                          max={10}
                         />
                       </div>
                     </div>
-                    
+
                     <div className="guest-amount-section__room-row">
                       <span className="guest-amount-section__room-label">
                         Infant (Aged 0-3)
                       </span>
-                      <NumberCounter 
-                        value={room.infants} 
-                        onChange={(val) => updateRoom(index, 'infants', val)} 
-                        min={0} 
-                        max={10} 
+                      <NumberCounter
+                        value={room.infants}
+                        onChange={(val) => updateRoom(index, 'infants', val)}
+                        min={0}
+                        max={10}
                       />
                     </div>
                   </div>
-                  
+
                   <div className="guest-amount-section__room-total">
                     <span className="label">Starting from</span>
                     <span className="price">{formatPrice(room.adults * adultPrice + room.children * childPrice)} VND</span>
                   </div>
                 </div>
               ))}
-              
+
               <button type="button" className="guest-amount-section__add-room" onClick={addRoom}>
                 <span className="label">Add another room</span>
               </button>
             </div>
           </div>
-          
+
           <div className="booking-form__actions" style={{ gap: '16px' }}>
             <button type="button" className="btn-secondary" onClick={handlePrevStep}>
               Back
@@ -727,7 +746,7 @@ export default function BookingForm({
           <p className="booking-form__notice">
             (*) The details you provide for all guests must match their government-issued photo IDs.
           </p>
-          
+
           {guests.map((guest, index) => (
             <div key={index} className="guest-form">
               <div className="guest-form__header">
@@ -740,7 +759,7 @@ export default function BookingForm({
                   </p>
                 )}
               </div>
-              
+
               <div className="guest-form__fields">
                 {/* Row 1: Names */}
                 <div className="guest-form__row">
@@ -765,7 +784,7 @@ export default function BookingForm({
                     />
                   </div>
                 </div>
-                
+
                 {/* Row 2: Gender & DOB */}
                 <div className="guest-form__row">
                   <div className="form-field">
@@ -797,7 +816,7 @@ export default function BookingForm({
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Row 3: Countries */}
                 <div className="guest-form__row">
                   <div className="form-field">
@@ -835,7 +854,7 @@ export default function BookingForm({
                     </select>
                   </div>
                 </div>
-                
+
                 {/* Row 4: Contact Info (Primary Guest Only) */}
                 {index === 0 && (
                   <div className="guest-form__row">
@@ -868,7 +887,7 @@ export default function BookingForm({
                     </div>
                   </div>
                 )}
-                
+
                 {/* Row 5: ID Number */}
                 <div className="guest-form__row guest-form__row--full">
                   <div className="form-field">
@@ -881,7 +900,7 @@ export default function BookingForm({
                     />
                   </div>
                 </div>
-                
+
                 {/* Row 6: ID Dates */}
                 <div className="guest-form__row guest-form__row--thirds">
                   <div className="form-field">
@@ -924,12 +943,26 @@ export default function BookingForm({
                     />
                   </div>
                 </div>
+
+                {/* Row 7: Note */}
+                <div className="guest-form__row">
+                  <div className="form-field form-field--full">
+                    <label className="form-field__label">Note</label>
+                    <textarea
+                      className="form-field__input form-field__textarea"
+                      placeholder="Any dietary requirements (e.g. vegetarian/vegan, allergies), health conditions, mobility limitations, or any special requests."
+                      value={guest.note || ''}
+                      onChange={(e) => updateGuestInfo(index, 'note', e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
-      
+
       <DatePickerModal
         isOpen={showDatePicker}
         selectedDate={selectedDate}

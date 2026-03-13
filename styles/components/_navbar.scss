@@ -12,25 +12,25 @@
   z-index: $z-index-navbar;
   background-color: $color-white;
   box-shadow: $shadow-navbar;
-  padding: $spacing-base $spacing-3xl;
+  padding: $spacing-md $spacing-2xl;
   @include flex-between;
-  
+
   @media (max-width: 768px) {
     padding: $spacing-base $spacing-lg;
   }
-  
+
   &__logo {
     display: block;
-    height: 50px;
+    height: 40px;
     width: auto;
     flex-shrink: 0;
-    
+
     img {
       height: 100%;
       width: auto;
     }
   }
-  
+
   &__toggle {
     display: none;
     flex-direction: column;
@@ -42,7 +42,7 @@
     cursor: pointer;
     padding: 0;
     z-index: 1001;
-    
+
     span {
       display: block;
       width: 100%;
@@ -51,16 +51,16 @@
       border-radius: 3px;
       transition: all 0.3s ease-in-out;
     }
-    
+
     &.active {
       span:nth-child(1) {
         transform: translateY(9px) rotate(45deg);
       }
-      
+
       span:nth-child(2) {
         opacity: 0;
       }
-      
+
       span:nth-child(3) {
         transform: translateY(-9px) rotate(-45deg);
       }
@@ -70,15 +70,15 @@
   &__nav {
     display: flex;
     align-items: center;
-    gap: $spacing-xl;
+    gap: 60px;
   }
-  
+
   // Mobile Styles
   @media (max-width: 1024px) {
     &__toggle {
       display: flex;
     }
-    
+
     &__nav {
       position: fixed;
       top: 0;
@@ -90,26 +90,45 @@
       justify-content: center;
       transition: right 0.3s ease-in-out;
       z-index: 1000;
-      
+
       &.active {
         right: 0;
       }
     }
   }
-  
+
   &__link {
     @include font-tertiary($font-weight-regular);
-    font-size: $font-size-md;
-    line-height: 26px;
+    font-size: 14px;
+    line-height: 20px;
     color: $color-red-brown-dark;
     transition: opacity $transition-fast;
-    
+    font-family: Mona-sans, sans-serif;
+    font-weight: 400;
+
     &:hover {
       opacity: 0.7;
     }
+
+    &--dropdown {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+
+      svg {
+        flex-shrink: 0;
+      }
+    }
   }
-  
+
   &__cta {
-    @include button-gradient;
+    background-color: #5D1F1B;
+    color: white;
+    font-size: 14px;
+    padding: 8px 15px;
+    border-radius: 16px;
+    font-weight: 500;
+    font-family: Mona-sans, sans-serif;
+    line-height: 20px;
   }
 }

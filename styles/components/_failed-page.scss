@@ -1,0 +1,87 @@
+@use "../abstracts" as *;
+
+.failed-page {
+    min-height: 100vh;
+    background: $gradient-background;
+    padding-top: $navbar-height + 40px;
+    padding-bottom: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    &__container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    &__card {
+        min-width: 600px;
+        background-color: $color-white;
+        border-radius: $radius-xl;
+        box-shadow: $shadow-card;
+        padding: 20px 100px;
+        @include flex-column;
+        align-items: center;
+
+        @include respond-to(tablet) {
+            padding: 20px;
+        }
+    }
+
+    &__header {
+        text-align: center;
+        @include flex-column;
+        align-items: center;
+        gap: 30px;
+        padding: 30px 10px;
+
+        svg {
+            width: 50px;
+            height: 50px;
+        }
+    }
+
+    &__title {
+        @include font-secondary($font-weight-regular);
+        font-size: 32px;
+        color: $color-red-brown;
+        line-height: $line-height-tight;
+    }
+
+    &__message {
+        @include font-primary($font-weight-medium);
+        font-size: $font-size-base;
+        color: $color-red-brown;
+        text-align: center;
+        line-height: $line-height-tight;
+
+        p {
+            margin-bottom: 12px;
+
+            &:last-child {
+                margin-bottom: 0;
+            }
+        }
+    }
+
+    &__actions {
+        padding-bottom: 30px;
+    }
+
+    &__btn {
+        @include button-base;
+        @include font-primary($font-weight-medium);
+        background-color: $color-white;
+        color: $color-red-brown;
+        font-size: $font-size-base;
+        line-height: $line-height-tight;
+        padding: 10px 20px;
+        border: 1px solid $color-red-brown;
+        border-radius: $radius-full;
+
+        &:hover {
+            background-color: rgba($color-red-brown, 0.05);
+        }
+    }
+}

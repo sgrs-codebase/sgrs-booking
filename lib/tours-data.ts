@@ -15,6 +15,8 @@ export interface Tour {
   infantPrice: number;
   includes: string[];
   notes: string[];
+  notices?: string; // HTML or plain text for notices section
+  forceMajeure?: string; // HTML or plain text for force majeure section
 }
 
 export const TOURS: Record<string, Tour> = {
@@ -40,7 +42,26 @@ export const TOURS: Record<string, Tour> = {
       'Gratuity: $5 USD/person/day (guide, driver, and staff).',
       'Kindly note that ammunition at the Cu Chi shooting range and surcharges for special dietary requests (e.g. Halal, vegetarian, etc.) are not included in the tour price.',
       'Flexible cancellation up to 10 days prior to travel.',
-    ],
+    ], notices: `- All guests must carry valid passports or citizen identification cards throughout the journey.
+- Guests who fail to arrive without prior written cancellation will be considered no-shows. 100% of the service value will be charged, and no refunds will be issued.
+- For more details, please read Sai Gon River Stars' Delivery & Transportation Policy, Payment & Cancellation Policy, Service Terms & Conditions.
+- Passengers are responsible for ensuring arrive at the designated check-in location on time. Late arrivals or missed departures are treated as no-shows and are subject to applicable charges.
+- Sai Gon River Star reserves the right to refuse service in the following cases:
+  - Foreign guest does not possess a valid passport or holds an expired passport.
+  - Vietnamese guest does not possess a valid passport or citizen identification card.
+  - Required guest information is incomplete, inaccurate, or submitted late.
+- Insurance coverage: Sai Gon River Star has arranged and put in force Public and Product Liability Insurance through certified insurers that cover all cruise-related activities following international standards of quality in terms of scope of cover and limit of indemnity. A summary of insurance cover is available on request.
+- Contact Sai Gon River Star' Contact Center:
+  - Hotline: (+84) 98 391 23 25
+  - Email: info@saigonriverstar.com`,
+    forceMajeure: `In the event of unforeseen circumstances beyond our reasonable control (such as natural disasters, severe weather, government restrictions, strikes, or other similar events), Sai Gon River Star may be unable to operate part or all of the tour as planned.
+
+- In such cases, the affected obligations may be suspended, and we will inform you as soon as possible.
+- If the situation lasts for an extended period, both parties will discuss and seek a reasonable solution.
+- Sai Gon River Star is not responsible for any failure to provide services caused by these events, but we will always make reasonable efforts to support our guests.
+- For bad weather conditions, we reserve the right to cancel or adjust part or all of the cruise schedule to ensure safety. Any applicable surcharges (if any) will follow our company policy.
+
+Your safety and experience are always our top priorities.`,
   },
   'sunset-cruise': {
     id: 'sunset-cruise',
