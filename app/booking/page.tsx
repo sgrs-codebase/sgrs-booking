@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { Suspense, useState, useCallback, useEffect } from 'react';
+import { Suspense, useState, useCallback, useEffect, useRef } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import TourCard from '@/components/features/TourCard';
 import BookingForm from '@/components/features/BookingForm';
@@ -14,7 +14,7 @@ const DEFAULT_TOUR_ID = 'cu-chi-tunnels';
 function BookingContent() {
   const searchParams = useSearchParams();
   const tourId = searchParams.get('tourId') || DEFAULT_TOUR_ID;
-  
+
   const [tour, setTour] = useState<Tour | null>(null);
   const [isLoadingTour, setIsLoadingTour] = useState(true);
 
@@ -34,12 +34,39 @@ function BookingContent() {
     }
     fetchTour();
   }, [tourId]);
-  
+
   const [currentStep, setCurrentStep] = useState(1);
   // const [selectedDate, setSelectedDate] = useState('');
   const [totalPrice, setTotalPrice] = useState(0);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const formContainerRef = useRef<HTMLDivElement>(null);
+  const [tripTotalStyle, setTripTotalStyle] = useState<React.CSSProperties>({});
+
+  // Calculate TripTotal position based on form container
+  useEffect(() => {
+    const updatePosition = () => {
+      if (formContainerRef.current) {
+        const rect = formContainerRef.current.getBoundingClientRect();
+        setTripTotalStyle({
+          position: 'fixed',
+          bottom: '30px',
+          left: `${rect.left}px`,
+          width: `${rect.width}px`,
+        });
+      }
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition);
+    };
+  }, []);
 
   console.log(isSubmitting)
 
@@ -68,7 +95,7 @@ function BookingContent() {
     if (!tour) return;
     try {
       setIsSubmitting(true);
-      
+
       console.log('Sending checkout payload:', {
         tourId: tour.id,
         ...data,
@@ -89,9 +116,9 @@ function BookingContent() {
 
       const contentType = response.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
-         const text = await response.text();
-         console.error('Non-JSON response:', text);
-         throw new Error('Server returned a non-JSON response. Check console for details.');
+        const text = await response.text();
+        console.error('Non-JSON response:', text);
+        throw new Error('Server returned a non-JSON response. Check console for details.');
       }
 
       const result = await response.json();
@@ -99,7 +126,7 @@ function BookingContent() {
       if (!response.ok) {
         throw new Error(result.error || 'Checkout failed');
       }
-      
+
       if (result.paymentUrl) {
         window.location.href = result.paymentUrl;
       }
@@ -128,14 +155,14 @@ function BookingContent() {
   return (
     <div className="booking-page">
       <Navbar />
-      
+
       <div className="booking-page__body">
         <div className="booking-page__background">
           <aside className="booking-page__sidebar">
             <TourCard tour={tour} />
           </aside>
-          
-          <main className="booking-page__main">
+
+          <main className="booking-page__main" ref={formContainerRef}>
             <BookingForm
               tourId={tour.id}
               tourType={tour.bookingType}
@@ -150,16 +177,18 @@ function BookingContent() {
           </main>
         </div>
       </div>
-      
-      {/* TripTotal should be visible on Step 2 (Guest Amount) and Step 3 (Guest Info) */}
+
+      {/* TripTotal positioned using JS calculation */}
       {(currentStep === 2 || currentStep === 3) && (
-        <TripTotal
-                totalPrice={totalPrice}
-                onContinue={handleContinue}
-                showContinue={true}
-                isLoading={isSubmitting}
-                isLastStep={currentStep === 3}
-              />
+        <div style={tripTotalStyle}>
+          <TripTotal
+            totalPrice={totalPrice}
+            onContinue={handleContinue}
+            showContinue={true}
+            isLoading={isSubmitting}
+            isLastStep={currentStep === 3}
+          />
+        </div>
       )}
     </div>
   );
@@ -180,19 +209,19 @@ function BookingPageSkeleton() {
       <div className="booking-page__body">
         <div className="booking-page__background">
           <div className="booking-page__sidebar">
-            <div style={{ 
-              width: 506, 
-              height: 670, 
-              backgroundColor: '#fff', 
+            <div style={{
+              width: 506,
+              height: 670,
+              backgroundColor: '#fff',
               borderRadius: 25,
               animation: 'pulse 2s infinite'
             }} />
           </div>
           <div className="booking-page__main">
-            <div style={{ 
-              width: '100%', 
-              height: 400, 
-              backgroundColor: 'rgba(255,255,255,0.5)', 
+            <div style={{
+              width: '100%',
+              height: 400,
+              backgroundColor: 'rgba(255,255,255,0.5)',
               borderRadius: 20,
               animation: 'pulse 2s infinite'
             }} />

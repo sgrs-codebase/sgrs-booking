@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import BookingSteps from './BookingSteps';
-import Image from 'next/image';
+import { PhoneInput } from 'react-international-phone';
+import 'react-international-phone/style.css';
+import { isPossiblePhoneNumber, parsePhoneNumber } from 'libphonenumber-js';
 
 // Calendar Icon SVG
 const CalendarIcon = () => (
@@ -38,6 +40,101 @@ const CloseIcon = () => (
     <path d="M18 6L6 18M6 6L18 18" stroke="#49454F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
+
+const validateName = (name: string): boolean => {
+  const trimmedName = name.trim();
+  
+  // Must contain at least one letter
+  const hasLetter = /[a-zA-ZÀ-ỹ]/.test(trimmedName);
+  
+  // Only allows letters, spaces, hyphens, and apostrophes
+  const validChars = /^[a-zA-ZÀ-ỹ\s'-]+$/.test(trimmedName);
+  
+  // Must be at least 2 characters and contain at least one letter
+  return trimmedName.length >= 2 && hasLetter && validChars;
+};
+
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email.trim());
+};
+
+const validatePhone = (phone: string): { isValid: boolean; message?: string } => {
+  // Remove spaces and other formatting for validation
+  const cleanPhone = phone.replace(/[\s()-]/g, '').trim();
+  
+  // Check if phone is empty
+  if (!cleanPhone) {
+    return { isValid: false, message: 'Please enter a phone number' };
+  }
+  
+  // Check if phone starts with +
+  if (!cleanPhone.startsWith('+')) {
+    return { isValid: false, message: 'Phone number must include country code' };
+  }
+  
+  try {
+    // Use isPossiblePhoneNumber for less strict validation (checks format & length, not if number truly exists)
+    const isPossible = isPossiblePhoneNumber(cleanPhone);
+    
+    if (!isPossible) {
+      // Try to get more specific error by parsing
+      try {
+        const phoneNumber = parsePhoneNumber(cleanPhone);
+        if (phoneNumber.country) {
+          return { isValid: false, message: `Invalid phone number length for ${phoneNumber.country}` };
+        }
+      } catch {
+        // If parsing fails, return generic message
+      }
+      return { isValid: false, message: 'Invalid phone number format or length' };
+    }
+    
+    return { isValid: true };
+  } catch {
+    return { isValid: false, message: 'Invalid phone number' };
+  }
+};
+
+const validateDateOfBirth = (dob: string): { isValid: boolean; message?: string } => {
+  if (!dob) return { isValid: false };
+
+  const birthDate = new Date(dob);
+  const today = new Date();
+  const age = today.getFullYear() - birthDate.getFullYear();
+
+  if (birthDate > today) {
+    return { isValid: false, message: 'Date of birth must be in the past' };
+  }
+
+  if (age > 120) {
+    return { isValid: false, message: 'Invalid date of birth' };
+  }
+
+  return { isValid: true };
+};
+
+const validateIDDates = (issueDate: string, expiryDate: string): { isValid: boolean; message?: string } => {
+  if (!issueDate || !expiryDate) return { isValid: false };
+
+  const issue = new Date(issueDate);
+  const expiry = new Date(expiryDate);
+  const today = new Date();
+
+  if (issue > today) {
+    return { isValid: false, message: 'Issue date cannot be in the future' };
+  }
+
+  if (expiry < today) {
+    return { isValid: false, message: 'ID/Passport has expired' };
+  }
+
+  if (issue >= expiry) {
+    return { isValid: false, message: 'Expiry date must be after issue date' };
+  }
+
+  return { isValid: true };
+};
 
 interface NumberCounterProps {
   value: number;
@@ -422,6 +519,8 @@ export default function BookingForm({
   const [infants, setInfants] = useState(0);
   const [rooms, setRooms] = useState([{ adults: 1, children: 0, infants: 0 }]);
   const [guests, setGuests] = useState<GuestInfo[]>([{ ...emptyGuestInfo }]);
+  const [guestErrors, setGuestErrors] = useState<{ [guestIndex: number]: { [field: string]: boolean } }>({});
+  const [guestErrorMessages, setGuestErrorMessages] = useState<{ [guestIndex: number]: { [field: string]: string } }>({});
 
   const totalGuests = tourType === 'overnight-tour'
     ? rooms.reduce((sum, room) => sum + room.adults + room.children + room.infants, 0)
@@ -485,6 +584,10 @@ export default function BookingForm({
   };
 
   const handlePrevStep = () => {
+    // Clear errors when going back
+    setGuestErrors({});
+    setGuestErrorMessages({});
+
     setTimeout(() => {
       const prevStep = Math.max(currentStep - 1, 1);
       onStepChange(prevStep);
@@ -495,6 +598,83 @@ export default function BookingForm({
     const newGuests = [...guests];
     newGuests[index] = { ...newGuests[index], [field]: value };
     setGuests(newGuests);
+
+    const g = newGuests[index];
+    const newErrors = { ...guestErrors };
+    const newErrorMessages = { ...guestErrorMessages };
+
+    if (!newErrors[index]) newErrors[index] = {};
+    if (!newErrorMessages[index]) newErrorMessages[index] = {};
+
+    // When citizenship changes, clear phone errors to let user re-enter with new country context
+    if (field === 'citizenship') {
+      if (index === 0) {
+        delete newErrors[index].phone;
+        delete newErrorMessages[index].phone;
+      }
+    }
+
+    if (field === 'firstName' || field === 'lastName') {
+      if (value && !validateName(value)) {
+        newErrors[index][field] = true;
+        newErrorMessages[index][field] = 'Only letters, spaces, hyphens and apostrophes allowed';
+      } else {
+        delete newErrors[index][field];
+        delete newErrorMessages[index][field];
+      }
+    }
+
+    if (field === 'email' && value) {
+      if (!validateEmail(value)) {
+        newErrors[index].email = true;
+        newErrorMessages[index].email = 'Invalid email format';
+      } else {
+        delete newErrors[index].email;
+        delete newErrorMessages[index].email;
+      }
+    }
+
+    if (field === 'phone' && value) {
+      const phoneValidation = validatePhone(value);
+      if (!phoneValidation.isValid) {
+        newErrors[index].phone = true;
+        newErrorMessages[index].phone = phoneValidation.message || 'Invalid phone number';
+      } else {
+        delete newErrors[index].phone;
+        delete newErrorMessages[index].phone;
+      }
+    }
+
+    if (field === 'dateOfBirth' && value) {
+      const dobValidation = validateDateOfBirth(value);
+      if (!dobValidation.isValid) {
+        newErrors[index].dateOfBirth = true;
+        newErrorMessages[index].dateOfBirth = dobValidation.message || 'Invalid date';
+      } else {
+        delete newErrors[index].dateOfBirth;
+        delete newErrorMessages[index].dateOfBirth;
+      }
+    }
+
+    if ((field === 'issueDate' || field === 'expiryDate') && g.issueDate && g.expiryDate) {
+      const dateValidation = validateIDDates(g.issueDate, g.expiryDate);
+      if (!dateValidation.isValid) {
+        newErrors[index].issueDate = true;
+        newErrors[index].expiryDate = true;
+        newErrorMessages[index].expiryDate = dateValidation.message || 'Invalid dates';
+      } else {
+        delete newErrors[index].issueDate;
+        delete newErrors[index].expiryDate;
+        delete newErrorMessages[index].issueDate;
+        delete newErrorMessages[index].expiryDate;
+      }
+    }
+
+    if (Object.keys(newErrors[index]).length === 0) delete newErrors[index];
+    if (Object.keys(newErrorMessages[index]).length === 0) delete newErrorMessages[index];
+
+    setGuestErrors(newErrors);
+    setGuestErrorMessages(newErrorMessages);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -503,13 +683,99 @@ export default function BookingForm({
     // Validation for Step 3 (Guest Info)
     if (currentStep === 3) {
       // Validate Guest Info
+      const errors: { [guestIndex: number]: { [field: string]: boolean } } = {};
+      const errorMessages: string[] = [];
+      let hasError = false;
+
       for (let i = 0; i < guests.length; i++) {
         const g = guests[i];
-        if (!g.firstName || !g.lastName || !g.gender || !g.dateOfBirth || !g.citizenship || !g.residence || !g.idNumber || !g.issueDate || !g.expiryDate || !g.issuingAuthority) {
-          // You might want to add a toast or error state here
-          alert('Please fill in all required fields for all guests');
-          return;
+        const guestErrorFields: { [field: string]: boolean } = {};
+        const guestLabel = i === 0 ? 'Primary Guest' : `Guest ${i + 1}`;
+
+        if (!g.firstName || !validateName(g.firstName)) {
+          guestErrorFields.firstName = true;
+          if (g.firstName && !validateName(g.firstName)) {
+            errorMessages.push(`${guestLabel}: Invalid first name`);
+          }
         }
+
+        if (!g.lastName || !validateName(g.lastName)) {
+          guestErrorFields.lastName = true;
+          if (g.lastName && !validateName(g.lastName)) {
+            errorMessages.push(`${guestLabel}: Invalid last name`);
+          }
+        }
+
+        if (!g.gender) guestErrorFields.gender = true;
+
+        if (!g.dateOfBirth) {
+          guestErrorFields.dateOfBirth = true;
+        } else {
+          const dobValidation = validateDateOfBirth(g.dateOfBirth);
+          if (!dobValidation.isValid) {
+            guestErrorFields.dateOfBirth = true;
+            errorMessages.push(`${guestLabel}: ${dobValidation.message}`);
+          }
+        }
+
+        if (!g.citizenship) guestErrorFields.citizenship = true;
+        if (!g.residence) guestErrorFields.residence = true;
+
+        if (!g.idNumber) {
+          guestErrorFields.idNumber = true;
+        }
+
+        if (!g.issueDate) {
+          guestErrorFields.issueDate = true;
+        }
+        if (!g.expiryDate) {
+          guestErrorFields.expiryDate = true;
+        }
+
+        if (g.issueDate && g.expiryDate) {
+          const dateValidation = validateIDDates(g.issueDate, g.expiryDate);
+          if (!dateValidation.isValid) {
+            guestErrorFields.issueDate = true;
+            guestErrorFields.expiryDate = true;
+            errorMessages.push(`${guestLabel}: ${dateValidation.message}`);
+          }
+        }
+
+        if (!g.issuingAuthority) guestErrorFields.issuingAuthority = true;
+
+        // Phone and email only required for primary guest (index 0)
+        if (i === 0) {
+          if (!g.phone) {
+            guestErrorFields.phone = true;
+          } else {
+            const phoneValidation = validatePhone(g.phone);
+            if (!phoneValidation.isValid) {
+              guestErrorFields.phone = true;
+              errorMessages.push(`${guestLabel}: ${phoneValidation.message}`);
+            }
+          }
+
+          if (!g.email) {
+            guestErrorFields.email = true;
+          } else if (!validateEmail(g.email)) {
+            guestErrorFields.email = true;
+            errorMessages.push(`${guestLabel}: Invalid email address`);
+          }
+        }
+
+        if (Object.keys(guestErrorFields).length > 0) {
+          errors[i] = guestErrorFields;
+          hasError = true;
+        }
+      }
+
+      if (hasError) {
+        setGuestErrors(errors);
+        const message = errorMessages.length > 0
+          ? 'Please fix the following errors:\n\n' + errorMessages.join('\n')
+          : 'Please fill in all required fields for all guests';
+        alert(message);
+        return;
       }
 
       // Submit form
@@ -767,21 +1033,27 @@ export default function BookingForm({
                     <label className="form-field__label">First legal name</label>
                     <input
                       type="text"
-                      className="form-field__input"
+                      className={`form-field__input ${guestErrors[index]?.firstName ? 'form-field__input--error' : ''}`}
                       placeholder="Enter your first name"
                       value={guest.firstName}
                       onChange={(e) => updateGuestInfo(index, 'firstName', e.target.value)}
                     />
+                    {guestErrorMessages[index]?.firstName && (
+                      <span className="form-field__error">{guestErrorMessages[index].firstName}</span>
+                    )}
                   </div>
                   <div className="form-field">
                     <label className="form-field__label">Last legal name</label>
                     <input
                       type="text"
-                      className="form-field__input"
+                      className={`form-field__input ${guestErrors[index]?.lastName ? 'form-field__input--error' : ''}`}
                       placeholder="Enter your last name"
                       value={guest.lastName}
                       onChange={(e) => updateGuestInfo(index, 'lastName', e.target.value)}
                     />
+                    {guestErrorMessages[index]?.lastName && (
+                      <span className="form-field__error">{guestErrorMessages[index].lastName}</span>
+                    )}
                   </div>
                 </div>
 
@@ -790,7 +1062,7 @@ export default function BookingForm({
                   <div className="form-field">
                     <label className="form-field__label">Gender</label>
                     <select
-                      className="form-field__select"
+                      className={`form-field__select ${guestErrors[index]?.gender ? 'form-field__input--error' : ''}`}
                       value={guest.gender}
                       onChange={(e) => updateGuestInfo(index, 'gender', e.target.value)}
                     >
@@ -805,7 +1077,7 @@ export default function BookingForm({
                     <div className="form-field__input-wrapper">
                       <input
                         type="date"
-                        className="form-field__input form-field__input--date"
+                        className={`form-field__input form-field__input--date ${guestErrors[index]?.dateOfBirth ? 'form-field__input--error' : ''}`}
                         placeholder="DD/MM/YYYY"
                         value={guest.dateOfBirth}
                         onChange={(e) => updateGuestInfo(index, 'dateOfBirth', e.target.value)}
@@ -814,6 +1086,9 @@ export default function BookingForm({
                         <CalendarIcon />
                       </span>
                     </div>
+                    {guestErrorMessages[index]?.dateOfBirth && (
+                      <span className="form-field__error">{guestErrorMessages[index].dateOfBirth}</span>
+                    )}
                   </div>
                 </div>
 
@@ -822,7 +1097,7 @@ export default function BookingForm({
                   <div className="form-field">
                     <label className="form-field__label">Country of Citizenship</label>
                     <select
-                      className="form-field__select"
+                      className={`form-field__select ${guestErrors[index]?.citizenship ? 'form-field__input--error' : ''}`}
                       value={guest.citizenship}
                       onChange={(e) => updateGuestInfo(index, 'citizenship', e.target.value)}
                     >
@@ -839,7 +1114,7 @@ export default function BookingForm({
                   <div className="form-field">
                     <label className="form-field__label">Country of Residence</label>
                     <select
-                      className="form-field__select"
+                      className={`form-field__select ${guestErrors[index]?.residence ? 'form-field__input--error' : ''}`}
                       value={guest.residence}
                       onChange={(e) => updateGuestInfo(index, 'residence', e.target.value)}
                     >
@@ -860,30 +1135,32 @@ export default function BookingForm({
                   <div className="guest-form__row">
                     <div className="form-field form-field--phone">
                       <label className="form-field__label">Phone numbers</label>
-                      <div className="form-field__input-wrapper">
-                        <div className="form-field__country-code">
-                          <span className="flag">
-                            <Image src="/images/flags/vn.svg" alt="Vietnam" width={30} height={20} />
-                          </span>
-                        </div>
-                        <input
-                          type="tel"
-                          className="form-field__input"
-                          placeholder=""
-                          value={guest.phone}
-                          onChange={(e) => updateGuestInfo(index, 'phone', e.target.value)}
-                        />
-                      </div>
+                      <PhoneInput
+                        key={guest.citizenship || 'default'} // Force re-render when citizenship changes
+                        defaultCountry={(guest.citizenship && guest.citizenship !== 'OTHER' ? guest.citizenship.toLowerCase() : 'vn') as string}
+                        value={guest.phone}
+                        onChange={(phone) => updateGuestInfo(index, 'phone', phone)}
+                        className={guestErrors[index]?.phone ? 'phone-input--error' : ''}
+                        hideDropdown={false}
+                        disableDialCodeAndPrefix={false}
+                        forceDialCode={true}
+                      />
+                      {guestErrorMessages[index]?.phone && (
+                        <span className="form-field__error">{guestErrorMessages[index].phone}</span>
+                      )}
                     </div>
                     <div className="form-field">
                       <label className="form-field__label">Email address</label>
                       <input
                         type="email"
-                        className="form-field__input"
+                        className={`form-field__input ${guestErrors[index]?.email ? 'form-field__input--error' : ''}`}
                         placeholder="Enter your email address"
                         value={guest.email}
                         onChange={(e) => updateGuestInfo(index, 'email', e.target.value)}
                       />
+                      {guestErrorMessages[index]?.email && (
+                        <span className="form-field__error">{guestErrorMessages[index].email}</span>
+                      )}
                     </div>
                   </div>
                 )}
@@ -894,7 +1171,7 @@ export default function BookingForm({
                     <label className="form-field__label">National ID Number | Passport Number</label>
                     <input
                       type="text"
-                      className="form-field__input"
+                      className={`form-field__input ${guestErrors[index]?.idNumber ? 'form-field__input--error' : ''}`}
                       value={guest.idNumber}
                       onChange={(e) => updateGuestInfo(index, 'idNumber', e.target.value)}
                     />
@@ -908,7 +1185,7 @@ export default function BookingForm({
                     <div className="form-field__input-wrapper">
                       <input
                         type="date"
-                        className="form-field__input form-field__input--date"
+                        className={`form-field__input form-field__input--date ${guestErrors[index]?.issueDate ? 'form-field__input--error' : ''}`}
                         placeholder="DD/MM/YYYY"
                         value={guest.issueDate}
                         onChange={(e) => updateGuestInfo(index, 'issueDate', e.target.value)}
@@ -917,13 +1194,16 @@ export default function BookingForm({
                         <CalendarIcon />
                       </span>
                     </div>
+                    {guestErrorMessages[index]?.issueDate && (
+                      <span className="form-field__error">{guestErrorMessages[index].issueDate}</span>
+                    )}
                   </div>
                   <div className="form-field">
                     <label className="form-field__label">Expiry Date</label>
                     <div className="form-field__input-wrapper">
                       <input
                         type="date"
-                        className="form-field__input form-field__input--date"
+                        className={`form-field__input form-field__input--date ${guestErrors[index]?.expiryDate ? 'form-field__input--error' : ''}`}
                         placeholder="DD/MM/YYYY"
                         value={guest.expiryDate}
                         onChange={(e) => updateGuestInfo(index, 'expiryDate', e.target.value)}
@@ -932,12 +1212,15 @@ export default function BookingForm({
                         <CalendarIcon />
                       </span>
                     </div>
+                    {guestErrorMessages[index]?.expiryDate && (
+                      <span className="form-field__error">{guestErrorMessages[index].expiryDate}</span>
+                    )}
                   </div>
                   <div className="form-field">
                     <label className="form-field__label">Issuing Authority</label>
                     <input
                       type="text"
-                      className="form-field__input"
+                      className={`form-field__input ${guestErrors[index]?.issuingAuthority ? 'form-field__input--error' : ''}`}
                       value={guest.issuingAuthority}
                       onChange={(e) => updateGuestInfo(index, 'issuingAuthority', e.target.value)}
                     />
