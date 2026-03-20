@@ -105,17 +105,15 @@ export async function POST(request: NextRequest) {
       vpc_Amount: amountInCents,
       vpc_Command: 'pay',
       vpc_Currency: 'VND',
-      vpc_Locale: 'vn', // Changed from 'en' to 'vn' per requirement
+      vpc_Locale: 'en',
       vpc_MerchTxnRef: orderId,
       vpc_Merchant: merchant,
       vpc_OrderInfo: orderInfo,
       vpc_ReturnURL: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/ipn`,
       vpc_Version: '2',
       vpc_TicketNo: clientIp,
-      Title: 'VPC 3-Party',
-      AgainLink: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/booking`,
-      vpc_Customer_Email: customerEmail,
-      vpc_Customer_Phone: customerPhone,
+      user_Customer_Email: customerEmail,
+      user_Customer_Phone: customerPhone,
     };
 
     console.log('OnePay Params constructed:', JSON.stringify(params)); // Debugging

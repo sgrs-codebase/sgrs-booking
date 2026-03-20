@@ -17,30 +17,68 @@ export interface OnePayParams {
 
 export function sign(params: Record<string, string>, secret: string): string {
   const keys = Object.keys(params)
-    .filter(k => (k.startsWith('vpc_') || k.startsWith('user_')) && 
-      k !== 'vpc_SecureHash' && 
-      k !== 'vpc_SecureHashType' && 
+    .filter(k => (k.startsWith('vpc_') || k.startsWith('user_')) &&
+      k !== 'vpc_SecureHash' &&
+      k !== 'vpc_SecureHashType' &&
       params[k].length > 0)
     .sort();
-  
+
   const queryString = keys.map(k => `${k}=${params[k]}`).join('&');
-  
+
+  console.log('\n=== SIGNING ===');
+  console.log('Filtered keys:', keys);
+  console.log('Query string:', queryString);
+
   const hmac = crypto.createHmac('sha256', Buffer.from(secret, 'hex'));
   hmac.update(queryString);
-  return hmac.digest('hex').toUpperCase();
+  const hash = hmac.digest('hex').toUpperCase();
+
+  console.log('Hash:', hash);
+  console.log('=== SIGNING END ===\n');
+
+  return hash;
 }
 
 export function verify(params: Record<string, string>, secret: string): boolean {
   const secureHash = params['vpc_SecureHash'];
   if (!secureHash) return false;
-  
+
   const calculatedHash = sign(params, secret);
   return secureHash === calculatedHash;
 }
 
 export function buildPaymentUrl(params: OnePayParams, baseUrl: string, secret: string): string {
+  console.log('\n=== BUILD PAYMENT URL ===');
+  console.log('Input params:', params);
+
   const secureHash = sign(params, secret);
-  const queryParams = new URLSearchParams(params);
+  console.log('Secure hash:', secureHash);
+
+  const queryParams = new URLSearchParams();
+  const includedKeys: string[] = [];
+  const excludedKeys: string[] = [];
+
+  Object.keys(params).forEach(key => {
+    if ((key.startsWith('vpc_') || key.startsWith('user_'))
+      && key !== 'vpc_SecureHash'
+      && key !== 'vpc_SecureHashType'
+      && params[key]
+      && params[key].length > 0) {
+      queryParams.append(key, params[key]);
+      includedKeys.push(key);
+    } else {
+      excludedKeys.push(key);
+    }
+  });
+
+  console.log('Included params:', includedKeys);
+  console.log('Excluded params:', excludedKeys);
+
   queryParams.append('vpc_SecureHash', secureHash);
-  return `${baseUrl}?${queryParams.toString()}`;
+
+  const finalUrl = `${baseUrl}?${queryParams.toString()}`;
+  console.log('Final URL:', finalUrl);
+  console.log('=== BUILD PAYMENT URL END ===\n');
+
+  return finalUrl;
 }

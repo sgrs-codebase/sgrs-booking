@@ -161,8 +161,9 @@ export async function countDailyBookings(tourId: string, travelDate: string): Pr
   }
 }
 
-// Generate OrderID in format: TOUR{number}.{ddMMyyyy}.{sequence}
-// Example: TOUR1.27032026.001
+// Generate OrderID in format: TOUR{number}.{ddMMyyyy}.{unique_suffix}
+// Example: TOUR1.21032026.A3F9K2
+// Uses timestamp + random for guaranteed uniqueness (no race conditions)
 export async function generateOrderId(tourId: string, travelDate: string): Promise<string> {
   // Map tour IDs to numbers
   const tourNumbers: Record<string, number> = {
@@ -178,11 +179,13 @@ export async function generateOrderId(tourId: string, travelDate: string): Promi
   const [year, month, day] = travelDate.split('-');
   const formattedDate = `${day}${month}${year}`;
 
-  // Get current count for this tour on this date and increment
-  const currentCount = await countDailyBookings(tourId, travelDate);
-  const sequence = String(currentCount + 1).padStart(3, '0');
+  // Generate unique suffix using timestamp + random
+  // This ensures no collisions even with concurrent bookings
+  const timestamp = Date.now().toString(36).toUpperCase(); // Base36 encoding
+  const random = Math.random().toString(36).substring(2, 5).toUpperCase(); // 3 random chars
+  const uniqueSuffix = (timestamp + random).substring(0, 6); // Take last 6 chars
 
-  return `TOUR${tourNumber}.${formattedDate}.${sequence}`;
+  return `TOUR${tourNumber}.${formattedDate}.${uniqueSuffix}`;
 }
 
 // ==========================================

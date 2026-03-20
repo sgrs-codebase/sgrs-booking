@@ -90,12 +90,14 @@ function BookingContent() {
       issueDate: string;
       expiryDate: string;
       issuingAuthority: string;
+      note?: string;
     }>;
   }) => {
     if (!tour) return;
-    try {
-      setIsSubmitting(true);
 
+    setIsSubmitting(true);
+
+    try {
       console.log('Sending checkout payload:', {
         tourId: tour.id,
         ...data,
@@ -118,23 +120,29 @@ function BookingContent() {
       if (!contentType || !contentType.includes("application/json")) {
         const text = await response.text();
         console.error('Non-JSON response:', text);
+        setIsSubmitting(false);
         throw new Error('Server returned a non-JSON response. Check console for details.');
       }
 
       const result = await response.json();
 
       if (!response.ok) {
+        setIsSubmitting(false);
         throw new Error(result.error || 'Checkout failed');
       }
 
+      console.log('Payment URL received:', result.paymentUrl);
+
       if (result.paymentUrl) {
         window.location.href = result.paymentUrl;
+      } else {
+        setIsSubmitting(false);
+        throw new Error('No payment URL received from server');
       }
     } catch (error) {
       console.error('Payment Error:', error);
-      alert(error instanceof Error ? error.message : 'Failed to initiate payment. Please try again.');
-    } finally {
       setIsSubmitting(false);
+      alert(error instanceof Error ? error.message : 'Failed to initiate payment. Please try again.');
     }
   }, [tour]);
 

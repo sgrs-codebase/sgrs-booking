@@ -43,13 +43,13 @@ const CloseIcon = () => (
 
 const validateName = (name: string): boolean => {
   const trimmedName = name.trim();
-  
+
   // Must contain at least one letter
   const hasLetter = /[a-zA-ZÀ-ỹ]/.test(trimmedName);
-  
+
   // Only allows letters, spaces, hyphens, and apostrophes
   const validChars = /^[a-zA-ZÀ-ỹ\s'-]+$/.test(trimmedName);
-  
+
   // Must be at least 2 characters and contain at least one letter
   return trimmedName.length >= 2 && hasLetter && validChars;
 };
@@ -62,21 +62,21 @@ const validateEmail = (email: string): boolean => {
 const validatePhone = (phone: string): { isValid: boolean; message?: string } => {
   // Remove spaces and other formatting for validation
   const cleanPhone = phone.replace(/[\s()-]/g, '').trim();
-  
+
   // Check if phone is empty
   if (!cleanPhone) {
     return { isValid: false, message: 'Please enter a phone number' };
   }
-  
+
   // Check if phone starts with +
   if (!cleanPhone.startsWith('+')) {
     return { isValid: false, message: 'Phone number must include country code' };
   }
-  
+
   try {
     // Use isPossiblePhoneNumber for less strict validation (checks format & length, not if number truly exists)
     const isPossible = isPossiblePhoneNumber(cleanPhone);
-    
+
     if (!isPossible) {
       // Try to get more specific error by parsing
       try {
@@ -89,7 +89,7 @@ const validatePhone = (phone: string): { isValid: boolean; message?: string } =>
       }
       return { isValid: false, message: 'Invalid phone number format or length' };
     }
-    
+
     return { isValid: true };
   } catch {
     return { isValid: false, message: 'Invalid phone number' };
@@ -778,6 +778,11 @@ export default function BookingForm({
         return;
       }
 
+      const guestsWithDefaults = guests.map(guest => ({
+        ...guest,
+        note: guest.note && guest.note.trim() ? guest.note : 'None'
+      }));
+
       // Submit form
       onSubmit({
         date: selectedDate,
@@ -786,7 +791,7 @@ export default function BookingForm({
         adults: tourType === 'overnight-tour' ? rooms.reduce((sum, r) => sum + r.adults, 0) : adults,
         children: tourType === 'overnight-tour' ? rooms.reduce((sum, r) => sum + r.children, 0) : children,
         infants: tourType === 'overnight-tour' ? rooms.reduce((sum, r) => sum + r.infants, 0) : infants,
-        guests,
+        guests: guestsWithDefaults,
       });
       return;
     }
