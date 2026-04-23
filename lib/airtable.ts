@@ -147,45 +147,55 @@ export async function getOrderFromAirtable(orderId: string): Promise<OrderRecord
   }
 }
 
-// Count bookings for a specific tour on a specific date
-export async function countDailyBookings(tourId: string, travelDate: string): Promise<number> {
-  try {
-    const records = await base('Orders').select({
-      filterByFormula: `AND({TourID} = '${tourId}', {TravelDate} = '${travelDate}')`,
-    }).all();
-
-    return records.length;
-  } catch (error) {
-    console.error('Airtable Count Daily Bookings Error:', error);
-    return 0;
-  }
-}
-
-// Generate OrderID in format: TOUR{number}.{ddMMyyyy}.{unique_suffix}
-// Example: TOUR1.21032026.A3F9K2
-// Uses timestamp + random for guaranteed uniqueness (no race conditions)
+// Generate OrderID in format: WEB.TOUR.YYMMDD.NNN
+// Example: WEB.CCBD.260501.001
 export async function generateOrderId(tourId: string, travelDate: string): Promise<string> {
-  // Map tour IDs to numbers
-  const tourNumbers: Record<string, number> = {
-    'cu-chi-tunnels': 1,
-    'sunset-cruise': 2,
-    'mekong-delta': 3,
+  // Map common tour IDs to abbreviations
+  const tourCodes: Record<string, string> = {
+    'cu-chi-binh-duong': 'CCBD',
+    'sunset-cruise': 'SC',
+    'mekong-delta': 'MD',
   };
 
-  const tourNumber = tourNumbers[tourId] || 1;
+  // Get tour code or fallback to first 4 chars of ID uppercase
+  const tourCode = tourCodes[tourId] || tourId.substring(0, 4).toUpperCase();
 
-  // Format date as ddMMyyyy from YYYY-MM-DD string
-  // Parse manually to avoid timezone issues
+  // Format date as YYMMDD from YYYY-MM-DD string
   const [year, month, day] = travelDate.split('-');
-  const formattedDate = `${day}${month}${year}`;
+  const formattedDate = `${year.substring(2)}${month}${day}`;
 
-  // Generate unique suffix using timestamp + random
-  // This ensures no collisions even with concurrent bookings
-  const timestamp = Date.now().toString(36).toUpperCase(); // Base36 encoding
-  const random = Math.random().toString(36).substring(2, 5).toUpperCase(); // 3 random chars
-  const uniqueSuffix = (timestamp + random).substring(0, 6); // Take last 6 chars
+  const prefix = `WEB.${tourCode}.${formattedDate}.`;
 
-  return `TOUR${tourNumber}.${formattedDate}.${uniqueSuffix}`;
+  try {
+    // Search for the highest sequence number for this specific tour and date
+    // We search for records where OrderID starts with our prefix
+    const records = await base('Orders').select({
+      filterByFormula: `FIND('${prefix}', {OrderID}) = 1`,
+      sort: [{ field: 'OrderID', direction: 'desc' }],
+      maxRecords: 1
+    }).firstPage();
+
+    let nextNumber = 1;
+
+    if (records.length > 0) {
+      const lastOrderId = records[0].get('OrderID') as string;
+      const parts = lastOrderId.split('.');
+      const lastSequenceStr = parts[parts.length - 1];
+      const lastNumber = parseInt(lastSequenceStr, 10);
+      
+      if (!isNaN(lastNumber)) {
+        nextNumber = lastNumber + 1;
+      }
+    }
+
+    const sequenceNumber = nextNumber.toString().padStart(3, '0');
+    return `${prefix}${sequenceNumber}`;
+  } catch (error) {
+    console.error('Airtable Generate OrderID Error:', error);
+    // Fallback: Use timestamp to ensure uniqueness if Airtable query fails
+    const timestamp = Date.now().toString().slice(-3);
+    return `${prefix}${timestamp}`;
+  }
 }
 
 // ==========================================
@@ -311,6 +321,12 @@ const CACHE_TTL = 10 * 60 * 1000; // 10 minutes (increased since tour data is st
 
 export async function getToursFromAirtable(): Promise<TourRecord[]> {
   try {
+    // Check if keys are available
+    if (!process.env.AIRTABLE_API_KEY || !process.env.AIRTABLE_BASE_ID) {
+      console.error('Airtable keys missing in environment variables');
+      return [];
+    }
+
     // Check cache first
     const now = Date.now();
     if (cachedTours && (now - lastFetchTime < CACHE_TTL)) {
@@ -321,38 +337,20 @@ export async function getToursFromAirtable(): Promise<TourRecord[]> {
     const records = await base('Tours').select().all();
 
     if (records.length === 0) {
-      console.log('No tours found in Airtable, using local fallback');
-      const fallbackTours = Object.values(TOURS).map(tour => ({
-        id: tour.id,
-        name: tour.name,
-        subtitle: tour.subtitle,
-        type: tour.type,
-        bookingType: tour.bookingType,
-        duration: tour.duration,
-        image: tour.image,
-        adultPrice: tour.adultPrice,
-        childPrice: tour.childPrice,
-        infantPrice: tour.infantPrice,
-        includes: tour.includes,
-        notes: tour.notes,
-        notices: tour.notices && !tour.notices.trim().startsWith('<')
-          ? convertPlainTextToHTML(tour.notices)
-          : tour.notices,
-        forceMajeure: tour.forceMajeure && !tour.forceMajeure.trim().startsWith('<')
-          ? convertPlainTextToHTML(tour.forceMajeure)
-          : tour.forceMajeure
-      }));
-      // Even if fallback, we can cache it to avoid reprocessing
-      cachedTours = fallbackTours;
-      lastFetchTime = now;
-      return fallbackTours;
+      console.warn('No tours found in Airtable');
+      return [];
     }
 
     const tours = records.map(record => {
-      const includesRaw = (record.get('includes') as string) || '';
-      const notesRaw = (record.get('notes') as string) || '';
-      const noticesRaw = (record.get('notices') as string) || '';
-      const forceMajeureRaw = (record.get('forceMajeure') as string) || '';
+      // Helper to get field value case-insensitively or with spaces
+      const getField = (name: string) => {
+        return record.get(name) || record.get(name.charAt(0).toUpperCase() + name.slice(1)) || record.get(name.replace(/([A-Z])/g, ' $1').trim());
+      };
+
+      const includesRaw = (getField('includes') as string) || '';
+      const notesRaw = (getField('notes') as string) || '';
+      const noticesRaw = (getField('notices') as string) || '';
+      const forceMajeureRaw = (getField('forceMajeure') as string) || '';
 
       // Convert plain text to HTML if not already HTML
       const noticesHTML = noticesRaw && !noticesRaw.trim().startsWith('<')
@@ -364,16 +362,16 @@ export async function getToursFromAirtable(): Promise<TourRecord[]> {
         : forceMajeureRaw;
 
       return {
-        id: record.get('id') as string,
-        name: record.get('name') as string,
-        subtitle: record.get('subtitle') as string,
-        type: record.get('type') as string,
-        bookingType: record.get('bookingType') as string,
-        duration: record.get('duration') as string,
-        image: record.get('image') as string,
-        adultPrice: Number(record.get('adultPrice')),
-        childPrice: Number(record.get('childPrice')),
-        infantPrice: Number(record.get('infantPrice')),
+        id: getField('id') as string,
+        name: getField('name') as string,
+        subtitle: getField('subtitle') as string,
+        type: getField('type') as string,
+        bookingType: getField('bookingType') as string,
+        duration: getField('duration') as string,
+        image: getField('image') as string,
+        adultPrice: Number(getField('adultPrice') || 0),
+        childPrice: Number(getField('childPrice') || 0),
+        infantPrice: Number(getField('infantPrice') || 0),
         includes: includesRaw.split('\n').map(s => s.trim()).filter(Boolean),
         notes: notesRaw.split('\n').map(s => s.trim()).filter(Boolean),
         notices: noticesHTML || undefined,
@@ -388,28 +386,6 @@ export async function getToursFromAirtable(): Promise<TourRecord[]> {
     return tours;
   } catch (error) {
     console.error('Airtable Get Tours Error:', error);
-    // Fallback to local data on error
-    console.log('Using local tour data fallback due to error');
-    // We can also cache this fallback result if we want to avoid repeated errors quickly
-    return Object.values(TOURS).map(tour => ({
-      id: tour.id,
-      name: tour.name,
-      subtitle: tour.subtitle,
-      type: tour.type,
-      bookingType: tour.bookingType,
-      duration: tour.duration,
-      image: tour.image,
-      adultPrice: tour.adultPrice,
-      childPrice: tour.childPrice,
-      infantPrice: tour.infantPrice,
-      includes: tour.includes,
-      notes: tour.notes,
-      notices: tour.notices && !tour.notices.trim().startsWith('<')
-        ? convertPlainTextToHTML(tour.notices)
-        : tour.notices,
-      forceMajeure: tour.forceMajeure && !tour.forceMajeure.trim().startsWith('<')
-        ? convertPlainTextToHTML(tour.forceMajeure)
-        : tour.forceMajeure
-    }));
+    return [];
   }
 }

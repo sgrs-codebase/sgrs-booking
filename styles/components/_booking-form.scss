@@ -715,6 +715,19 @@
       }
     }
 
+    &--past {
+      opacity: 0.9;
+
+      button {
+        cursor: not-allowed;
+        color: rgba($color-red-brown, 0.5);
+
+        &:hover {
+          background-color: transparent;
+        }
+      }
+    }
+
     // Range Selection Styles
     &--start,
     &--end {

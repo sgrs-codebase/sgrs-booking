@@ -242,6 +242,11 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
     const date = new Date(Date.UTC(year, month, day));
     const dateStr = date.toISOString().split('T')[0];
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checkDate = new Date(year, month, day);
+    if (checkDate < today) return;
+
     if (!isRange) {
       onSelectDate(dateStr);
       onClose();
@@ -386,13 +391,14 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
                 <div key={weekIndex} className="date-picker-modal__week">
                   {week.map((day, dayIndex) => {
                     const selectionState = day ? isDateSelected(day) : '';
+                    const isPast = day ? (new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day).getTime() < new Date().setHours(0, 0, 0, 0)) : false;
                     return (
-                      <div key={dayIndex} className={`date-picker-modal__day ${!day ? 'date-picker-modal__day--empty' : ''} ${selectionState ? `date-picker-modal__day--${selectionState}` : ''}`}>
+                      <div key={dayIndex} className={`date-picker-modal__day ${!day ? 'date-picker-modal__day--empty' : ''} ${selectionState ? `date-picker-modal__day--${selectionState}` : ''} ${isPast ? 'date-picker-modal__day--past' : ''}`}>
                         <button
                           type="button"
                           onClick={() => day && handleDateClick(day)}
                           className={selectionState === 'selected' || selectionState === 'start' || selectionState === 'end' ? 'selected' : ''}
-                          disabled={!day}
+                          disabled={!day || isPast}
                         >
                           {day || ''}
                         </button>
@@ -458,7 +464,7 @@ interface GuestInfo {
 
 interface BookingFormProps {
   tourId: string;
-  tourType: 'day-tour' | 'overnight-tour';
+  tourType: 'day-tour' | 'overnight-tour' | string;
   adultPrice: number;
   childPrice: number;
   infantPrice: number;

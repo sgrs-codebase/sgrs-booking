@@ -121,3 +121,62 @@
     transform: none;
   }
 }
+
+// Error State Styles
+.error-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 100px 20px;
+  background: $gradient-background;
+  min-height: calc(100vh - #{$navbar-height});
+}
+
+.error-card {
+  @include card-section;
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-xl;
+  padding: $spacing-3xl;
+
+  &__icon {
+    background-color: rgba($color-red-brown, 0.05);
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    svg {
+      width: 64px;
+      height: 64px;
+    }
+  }
+
+  &__title {
+    @include text-heading;
+    color: $color-red-brown;
+    margin: 0;
+  }
+
+  &__message {
+    @include font-primary($font-weight-medium);
+    font-size: $font-size-md;
+    line-height: $line-height-normal;
+    color: $color-grey-blue;
+    margin: 0;
+  }
+
+  .btn-primary {
+    margin-top: $spacing-lg;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

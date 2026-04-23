@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
       const tours = await getToursFromAirtable();
       const tour = fullOrder ? tours.find(t => t.id === fullOrder.TourID) : null;
 
-      let guestDetails: { firstName: string; lastName: string; gender: string; note?: string }[] = [];
+      let guestDetails: any[] = [];
       try {
         guestDetails = fullOrder ? JSON.parse(fullOrder.FullGuestDetails) : [];
       } catch { /* empty */ }

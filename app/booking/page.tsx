@@ -7,24 +7,32 @@ import TourCard from '@/components/features/TourCard';
 import BookingForm from '@/components/features/BookingForm';
 import TripTotal from '@/components/features/TripTotal';
 import { type Tour } from '@/lib/tours-data';
-
-// Default tour for demo purposes
-const DEFAULT_TOUR_ID = 'cu-chi-tunnels';
+import { parseBookingParams } from '@/lib/url-params';
 
 function BookingContent() {
   const searchParams = useSearchParams();
-  const tourId = searchParams.get('tourId') || DEFAULT_TOUR_ID;
+  
+  // Parse all URL params from Webflow
+  const urlParams = parseBookingParams(searchParams);
+  const tourId = urlParams.tourId;
 
   const [tour, setTour] = useState<Tour | null>(null);
   const [isLoadingTour, setIsLoadingTour] = useState(true);
 
   useEffect(() => {
     async function fetchTour() {
+      if (!tourId) {
+        setTour(null);
+        setIsLoadingTour(false);
+        return;
+      }
+
       try {
         const res = await fetch('/api/tours');
         if (!res.ok) throw new Error('Failed to fetch tours');
         const tours: Tour[] = await res.json();
-        const found = tours.find(t => t.id === tourId) || tours.find(t => t.id === DEFAULT_TOUR_ID);
+        // Exact match only - no fallback to default tour
+        const found = tours.find(t => t.id === tourId);
         setTour(found || null);
       } catch (e) {
         console.error(e);
@@ -156,8 +164,35 @@ function BookingContent() {
     }
   }, [currentStep, setCurrentStep]);
 
-  if (isLoadingTour || !tour) {
+  if (isLoadingTour) {
     return <BookingPageSkeleton />;
+  }
+
+  if (!tour) {
+    return (
+      <div className="booking-page">
+        <Navbar />
+        <div className="booking-page__body">
+          <div className="error-container">
+            <div className="error-card">
+              <div className="error-card__icon">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 8V12M12 16H12.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="#56231E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <h1 className="error-card__title">Tour Not Found</h1>
+              <p className="error-card__message">
+                The tour you are looking for does not exist or has been removed. 
+                Please check the link or contact us for assistance.
+              </p>
+              <a href="https://www.saigonriverstar.com" className="btn-primary">
+                Back to Homepage
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

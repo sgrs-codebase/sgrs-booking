@@ -14,10 +14,19 @@ import {
   Link,
 } from '@react-email/components';
 
-interface GuestDetail {
+export interface GuestDetail {
   firstName: string;
   lastName: string;
   gender: string;
+  dateOfBirth?: string;
+  citizenship?: string;
+  residence?: string;
+  phone?: string;
+  email?: string;
+  idNumber?: string;
+  issueDate?: string;
+  expiryDate?: string;
+  issuingAuthority?: string;
   note?: string;
 }
 
@@ -197,6 +206,20 @@ export const BookingReceipt = ({
                       {formatGuestName(guest.firstName, guest.lastName, guest.gender)}
                     </Text>
                     <Text style={styles.guestType}>{guestType}</Text>
+                    {(guest.idNumber || guest.citizenship) && (
+                      <Text style={styles.guestInfo}>
+                        {guest.idNumber && `ID: ${guest.idNumber}`}
+                        {guest.idNumber && guest.citizenship && ' | '}
+                        {guest.citizenship && `Nationality: ${guest.citizenship}`}
+                      </Text>
+                    )}
+                    {(guest.phone || guest.email) && (
+                      <Text style={styles.guestInfo}>
+                        {guest.phone && `Tel: ${guest.phone}`}
+                        {guest.phone && guest.email && ' | '}
+                        {guest.email && `Email: ${guest.email}`}
+                      </Text>
+                    )}
                   </Column>
                   <Column style={{ width: '25%', verticalAlign: 'top' as const }}>
                     <Text style={styles.guestFee}>{formatPrice(guestPrice)} VND</Text>
@@ -378,6 +401,14 @@ const styles = {
     color: COLOR_PRIMARY,
     lineHeight: '1.1',
     margin: '0',
+  },
+  guestInfo: {
+    fontFamily: FONT_PRIMARY,
+    fontWeight: 400 as const,
+    fontSize: '10px',
+    color: 'rgba(86, 35, 30, 0.7)',
+    lineHeight: '1.4',
+    margin: '4px 0 0',
   },
   guestFee: {
     fontFamily: FONT_PRIMARY,
