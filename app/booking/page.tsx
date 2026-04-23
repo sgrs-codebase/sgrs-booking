@@ -207,11 +207,13 @@ function BookingContent() {
 
           <main className="booking-page__main" ref={formContainerRef}>
             <BookingForm
+              key={tour.id}
               tourId={tour.id}
               tourType={tour.bookingType}
               adultPrice={tour.adultPrice}
               childPrice={tour.childPrice}
               infantPrice={tour.infantPrice}
+              startTimes={tour.startTimes}
               currentStep={currentStep}
               onSubmit={handleFormSubmit}
               onStepChange={setCurrentStep}

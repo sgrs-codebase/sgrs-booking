@@ -36,6 +36,7 @@ export interface TourRecord {
   infantPrice: number;
   includes: string[];
   notes: string[];
+  startTimes?: string[];
   notices?: string;
   forceMajeure?: string;
 }
@@ -349,6 +350,7 @@ export async function getToursFromAirtable(): Promise<TourRecord[]> {
 
       const includesRaw = (getField('includes') as string) || '';
       const notesRaw = (getField('notes') as string) || '';
+      const startTimesRaw = (getField('startTime') as string) || (getField('startTimes') as string) || '';
       const noticesRaw = (getField('notices') as string) || '';
       const forceMajeureRaw = (getField('forceMajeure') as string) || '';
 
@@ -374,6 +376,7 @@ export async function getToursFromAirtable(): Promise<TourRecord[]> {
         infantPrice: Number(getField('infantPrice') || 0),
         includes: includesRaw.split('\n').map(s => s.trim()).filter(Boolean),
         notes: notesRaw.split('\n').map(s => s.trim()).filter(Boolean),
+        startTimes: startTimesRaw ? startTimesRaw.split(/[\n,]+/).map(s => s.trim()).filter(Boolean) : undefined,
         notices: noticesHTML || undefined,
         forceMajeure: forceMajeureHTML || undefined
       };

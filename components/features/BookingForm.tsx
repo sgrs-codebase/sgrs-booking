@@ -468,6 +468,7 @@ interface BookingFormProps {
   adultPrice: number;
   childPrice: number;
   infantPrice: number;
+  startTimes?: string[];
   onSubmit: (data: {
     date: string;
     returnDate?: string;
@@ -510,6 +511,7 @@ export default function BookingForm({
   adultPrice,
   childPrice,
   infantPrice,
+  startTimes,
   currentStep,
   onStepChange,
   onPriceChange,
@@ -517,7 +519,8 @@ export default function BookingForm({
 }: BookingFormProps) {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedReturnDate, setSelectedReturnDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('08:00'); // Default time
+  const [selectedTime, setSelectedTime] = useState(startTimes && startTimes.length > 0 ? startTimes[0] : '08:00'); // Default time from Airtable if available
+
   const [showDatePicker, setShowDatePicker] = useState(false);
   // const [datePickerMode, setDatePickerMode] = useState<'start' | 'return'>('start');
   const [adults, setAdults] = useState(1);
@@ -850,19 +853,29 @@ export default function BookingForm({
                     value={selectedTime}
                     onChange={(e) => setSelectedTime(e.target.value)}
                   >
-                    <option value="07:00">07:00</option>
-                    <option value="07:30">07:30</option>
-                    <option value="08:00">08:00</option>
-                    <option value="08:30">08:30</option>
-                    <option value="09:00">09:00</option>
-                    <option value="09:30">09:30</option>
-                    <option value="10:00">10:00</option>
-                    <option value="13:00">13:00</option>
-                    <option value="13:30">13:30</option>
-                    <option value="14:00">14:00</option>
-                    <option value="17:00">17:00</option>
-                    <option value="18:00">18:00</option>
-                    <option value="19:00">19:00</option>
+                    {startTimes && startTimes.length > 0 ? (
+                      startTimes.map((time) => (
+                        <option key={time} value={time}>
+                          {time}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="07:00">07:00</option>
+                        <option value="07:30">07:30</option>
+                        <option value="08:00">08:00</option>
+                        <option value="08:30">08:30</option>
+                        <option value="09:00">09:00</option>
+                        <option value="09:30">09:30</option>
+                        <option value="10:00">10:00</option>
+                        <option value="13:00">13:00</option>
+                        <option value="13:30">13:30</option>
+                        <option value="14:00">14:00</option>
+                        <option value="17:00">17:00</option>
+                        <option value="18:00">18:00</option>
+                        <option value="19:00">19:00</option>
+                      </>
+                    )}
                   </select>
                 </div>
 
@@ -1022,6 +1035,9 @@ export default function BookingForm({
         <div className="booking-form__section">
           <p className="booking-form__notice">
             (*) The details you provide for all guests must match their government-issued photo IDs.
+          </p>
+          <p className="booking-form__notice">
+             Personal information is required for Port Authority submission. Please ensure all details are accurate.
           </p>
 
           {guests.map((guest, index) => (

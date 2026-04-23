@@ -15,6 +15,7 @@ export interface Tour {
   infantPrice: number;
   includes: string[];
   notes: string[];
+  startTimes?: string[];
   notices?: string; // HTML or plain text for notices section
   forceMajeure?: string; // HTML or plain text for force majeure section
 }
