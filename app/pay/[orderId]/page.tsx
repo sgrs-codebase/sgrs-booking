@@ -1,5 +1,6 @@
 'use client';
 
+import { use } from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { OrderRecord } from '@/lib/airtable';
@@ -8,8 +9,10 @@ const formatPrice = (price: string | number) => {
   return Number(price).toLocaleString('vi-VN').replace(/,/g, '.');
 };
 
-export default function RepayPage({ params }: { params: { orderId: string } }) {
+export default function RepayPage({ params: paramsPromise }: { params: Promise<{ orderId: string }> }) {
+  const params = use(paramsPromise);
   const [order, setOrder] = useState<OrderRecord | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);

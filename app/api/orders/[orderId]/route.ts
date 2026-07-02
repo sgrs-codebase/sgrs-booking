@@ -3,10 +3,12 @@ import { getOrderFromAirtable } from '@/lib/airtable';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
-    const order = await getOrderFromAirtable(params.orderId);
+    const { orderId } = await params;
+    const order = await getOrderFromAirtable(orderId);
+
 
     if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
