@@ -139,14 +139,17 @@ function BookingContent() {
         throw new Error(result.error || 'Checkout failed');
       }
 
-      console.log('Payment URL received:', result.paymentUrl);
+      console.log('Checkout response:', result);
 
       if (result.paymentUrl) {
         window.location.href = result.paymentUrl;
+      } else if (result.awaitingConfirmation) {
+        window.location.href = `/booking/success?orderId=${result.orderId}`;
       } else {
         setIsSubmitting(false);
-        throw new Error('No payment URL received from server');
+        throw new Error('No redirection information received from server');
       }
+
     } catch (error) {
       console.error('Payment Error:', error);
       setIsSubmitting(false);

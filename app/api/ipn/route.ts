@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verify } from '@/lib/onepay';
+import type { GuestDetail } from '@/components/emails/BookingReceipt';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -36,10 +37,11 @@ export async function GET(request: NextRequest) {
 
       // Strategy: Try to update existing "Pending" order first
       // The update function now returns the Record object if successful, or false
-      const updatedRecord = await updateOrderStatusAirtable(orderId, 'Paid', txnRef);
+      const updatedRecord = await updateOrderStatusAirtable(orderId, 'Paid', txnRef, 'confirmed');
 
       if (updatedRecord) {
         const orderData = await getOrderFromAirtable(orderId);
+
 
         if (orderData) {
           customerName = orderData.CustomerName;
@@ -67,10 +69,13 @@ export async function GET(request: NextRequest) {
           Guests: orderInfo,
           Amount: amount,
           PaymentStatus: 'Paid (Fallback)',
+          booking_status: 'confirmed',
+          payment_status: 'paid',
           OnePayRef: txnRef,
           FullGuestDetails: '{"note": "Created from IPN Fallback, no details"}',
           TravelDate: 'N/A (IPN Fallback)'
         });
+
       }
 
     } catch (dbError) {
@@ -92,7 +97,7 @@ export async function GET(request: NextRequest) {
       const tours = await getToursFromAirtable();
       const tour = fullOrder ? tours.find(t => t.id === fullOrder.TourID) : null;
 
-      let guestDetails: any[] = [];
+      let guestDetails: GuestDetail[] = [];
       try {
         guestDetails = fullOrder ? JSON.parse(fullOrder.FullGuestDetails) : [];
       } catch { /* empty */ }
@@ -115,8 +120,8 @@ export async function GET(request: NextRequest) {
       }));
 
       const { data, error } = await resend.emails.send({
-        from: 'onboarding@resend.dev', // Testing Mode
-        to: [adminEmail], // Send to Admin (must be your Resend account email)
+        from: process.env.FROM_EMAIL || 'onboarding@resend.dev',
+        to: fullOrder?.Email ? [adminEmail, fullOrder.Email] : [adminEmail],
         subject: `Booking Confirmed - ${orderId}`,
         html: emailHtml,
       });

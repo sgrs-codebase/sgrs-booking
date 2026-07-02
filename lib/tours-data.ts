@@ -10,6 +10,7 @@ export interface Tour {
   bookingType: 'day-tour' | 'overnight-tour' | string;
   duration: string;
   image: string;
+  codeName?: string;
   adultPrice: number;
   childPrice: number;
   infantPrice: number;

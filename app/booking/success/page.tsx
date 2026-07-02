@@ -53,17 +53,18 @@ export default async function BookingSuccessPage({
 
   const order = orderId ? await getOrderFromAirtable(orderId) : null;
 
-  // Guard: only show success page for orders that are actually paid
+  // Guard: show page for orders that are either paid or awaiting confirmation
   const isPaid = order?.PaymentStatus === 'Paid' || order?.PaymentStatus === 'Paid (Fallback)';
+  const isAwaiting = order?.PaymentStatus === 'Awaiting Confirmation';
 
   let tour = null;
-  if (order && isPaid) {
+  if (order && (isPaid || isAwaiting)) {
     const tours = await getToursFromAirtable();
     tour = tours.find(t => t.id === order.TourID);
   }
 
-  const guests = order && isPaid ? parseGuests(order.FullGuestDetails) : [];
-  const guestCounts = order && isPaid ? parseGuestCounts(order.Guests) : { adults: 0, children: 0, infants: 0 };
+  const guests = order && (isPaid || isAwaiting) ? parseGuests(order.FullGuestDetails) : [];
+  const guestCounts = order && (isPaid || isAwaiting) ? parseGuestCounts(order.Guests) : { adults: 0, children: 0, infants: 0 };
 
   return (
     <div className="success-page">
@@ -71,22 +72,34 @@ export default async function BookingSuccessPage({
       <div className="success-page__container">
         <div className="success-page__card">
           <div className="success-page__header">
-            <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <mask id="path-1-inside-1_1721_3217" fill="white">
-                <path d="M0 10C0 4.47715 4.47715 0 10 0H40C45.5228 0 50 4.47715 50 10V40C50 45.5228 45.5228 50 40 50H10C4.47715 50 0 45.5228 0 40V10Z" />
-              </mask>
-              <path d="M10 -0.550033C10 -0.183344 10 0.183344 10 0.550033C13.0472 0.611147 16.0945 0.669206 19.1417 0.72421C26.0945 0.849708 33.0472 0.959299 40 1.05298C44.7686 1.01306 48.9333 5.33993 48.7624 10C48.6621 20 48.5948 30 48.5603 40C48.6525 44.5579 44.542 48.6446 40 48.5332C30 48.5332 20 48.5662 10 48.632C5.40809 48.7818 1.18029 44.6686 1.23757 40C1.13729 30 1.00411 20 0.838012 10C0.795514 7.98958 1.43733 5.96884 2.65249 4.33754C4.32807 2.05177 7.10881 0.591492 10 0.550033C10 0.183344 10 -0.183344 10 -0.550033C6.77851 -0.635609 3.53511 0.883728 1.50592 3.4525C0.0346727 5.28272 -0.809641 7.62756 -0.838012 10C-1.00411 20 -1.13729 30 -1.23757 40C-1.43932 45.9846 3.93869 51.4773 10 51.368C20 51.4338 30 51.4668 40 51.4668C46.1112 51.6144 51.6065 46.0953 51.4397 40C51.4052 30 51.3379 20 51.2376 10C51.3258 4.00685 45.8846 -1.27209 40 -1.05298C33.0472 -0.959299 26.0945 -0.849708 19.1417 -0.72421C16.0945 -0.669206 13.0472 -0.611147 10 -0.550033ZM10 0.550033V-0.550033V0.550033Z" fill="#56231E" mask="url(#path-1-inside-1_1721_3217)" />
-              <path d="M10.6233 27.1208C10.364 27.3801 10.1047 27.6394 9.84544 27.8987C10.4011 28.5408 10.9589 29.1807 11.5188 29.8184C14.5349 33.2535 17.6137 36.6259 20.7551 39.9356L21.9401 41.1828L22.8742 39.6566C24.4736 37.0461 26.0383 34.4156 27.5686 31.7652C31.3796 25.1642 34.9763 18.4395 38.3586 11.5911C38.7345 10.8302 39.1076 10.0677 39.4782 9.3037C39.1606 9.12036 38.843 8.93701 38.5255 8.75367C38.0491 9.45655 37.5754 10.161 37.1043 10.8669C32.8645 17.2203 28.8391 23.6975 25.0281 30.2984C23.4978 32.9488 22.0022 35.6192 20.5411 38.3095L22.6601 38.0306C19.3505 34.8891 15.9781 31.8103 12.543 28.7942C11.9053 28.2343 11.2654 27.6765 10.6233 27.1208Z" fill="#56231E" />
-            </svg>
-            <h1 className="success-page__title">Payment Successful</h1>
+            {isAwaiting ? (
+              <svg width="50" height="50" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#56231E" strokeWidth="2" />
+                <path d="M12 6V12L16 14" stroke="#56231E" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            ) : (
+              <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <mask id="path-1-inside-1_1721_3217" fill="white">
+                  <path d="M0 10C0 4.47715 4.47715 0 10 0H40C45.5228 0 50 4.47715 50 10V40C50 45.5228 45.5228 50 40 50H10C4.47715 50 0 45.5228 0 40V10Z" />
+                </mask>
+                <path d="M10 -0.550033C10 -0.183344 10 0.183344 10 0.550033C13.0472 0.611147 16.0945 0.669206 19.1417 0.72421C26.0945 0.849708 33.0472 0.959299 40 1.05298C44.7686 1.01306 48.9333 5.33993 48.7624 10C48.6621 20 48.5948 30 48.5603 40C48.6525 44.5579 44.542 48.6446 40 48.5332C30 48.5332 20 48.5662 10 48.632C5.40809 48.7818 1.18029 44.6686 1.23757 40C1.13729 30 1.00411 20 0.838012 10C0.795514 7.98958 1.43733 5.96884 2.65249 4.33754C4.32807 2.05177 7.10881 0.591492 10 0.550033C10 0.183344 10 -0.183344 10 -0.550033C6.77851 -0.635609 3.53511 0.883728 1.50592 3.4525C0.0346727 5.28272 -0.809641 7.62756 -0.838012 10C-1.00411 20 -1.13729 30 -1.23757 40C-1.43932 45.9846 3.93869 51.4773 10 51.368C20 51.4338 30 51.4668 40 51.4668C46.1112 51.6144 51.6065 46.0953 51.4397 40C51.4052 30 51.3379 20 51.2376 10C51.3258 4.00685 45.8846 -1.27209 40 -1.05298C33.0472 -0.959299 26.0945 -0.849708 19.1417 -0.72421C16.0945 -0.669206 13.0472 -0.611147 10 -0.550033ZM10 0.550033V-0.550033V0.550033Z" fill="#56231E" mask="url(#path-1-inside-1_1721_3217)" />
+                <path d="M10.6233 27.1208C10.364 27.3801 10.1047 27.6394 9.84544 27.8987C10.4011 28.5408 10.9589 29.1807 11.5188 29.8184C14.5349 33.2535 17.6137 36.6259 20.7551 39.9356L21.9401 41.1828L22.8742 39.6566C24.4736 37.0461 26.0383 34.4156 27.5686 31.7652C31.3796 25.1642 34.9763 18.4395 38.3586 11.5911C38.7345 10.8302 39.1076 10.0677 39.4782 9.3037C39.1606 9.12036 38.843 8.93701 38.5255 8.75367C38.0491 9.45655 37.5754 10.161 37.1043 10.8669C32.8645 17.2203 28.8391 23.6975 25.0281 30.2984C23.4978 32.9488 22.0022 35.6192 20.5411 38.3095L22.6601 38.0306C19.3505 34.8891 15.9781 31.8103 12.543 28.7942C11.9053 28.2343 11.2654 27.6765 10.6233 27.1208Z" fill="#56231E" />
+              </svg>
+            )}
+            <h1 className="success-page__title">
+              {isAwaiting ? 'Booking Received' : 'Payment Successful'}
+            </h1>
             <p className="success-page__message">
-              Your booking has been successfully confirmed. Here are the details of your trip.
+              {isAwaiting 
+                ? 'We have received your booking request. Our team will check the availability and get back to you shortly via email.' 
+                : 'Your booking has been successfully confirmed. Here are the details of your trip.'}
             </p>
           </div>
 
           <div className="success-page__divider" />
 
-          {order && isPaid && tour ? (
+          {order && (isPaid || isAwaiting) && tour ? (
+
             <>
               <div className="success-page__tour-info">
                 <h2>{tour.name}</h2>

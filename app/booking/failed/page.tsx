@@ -27,7 +27,12 @@ export default function BookingFailedPage() {
                 This may happen due to a temporary bank issue,
                 network interruption, or card authorization error.
               </p>
+              <p className="mt-4 font-medium">
+                Your booking slot is still being held for 30 minutes. 
+                You can try to book again now or check your email for more information.
+              </p>
             </div>
+
           </div>
 
           <div className="failed-page__actions">

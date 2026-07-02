@@ -1,5 +1,6 @@
 import Airtable from 'airtable';
 import { TOURS } from '@/lib/tours-data';
+import { airtableSafe } from '@/lib/airtable-safe';
 
 // Initialize Airtable
 // API Key and Base ID should be in .env.local
@@ -21,6 +22,21 @@ export interface OrderRecord {
   TravelDate: string; // "YYYY-MM-DD"
   ReturnDate?: string; // "YYYY-MM-DD" (Optional)
   DepartureTime?: string; // "HH:mm" (Optional)
+  booking_status?: 'awaiting_confirmation' | 'confirmed' | 'cancelled';
+  payment_status?: 'pending' | 'paid' | 'failed';
+  Adults?: number;
+  Children?: number;
+  Infants?: number;
+  created_at?: string;
+}
+
+
+export interface TourDateRecord {
+  id?: string;
+  tourId: string;
+  date: string;
+  date_type: 'pre-set' | 'default';
+  total_slots: number;
 }
 
 export interface TourRecord {
@@ -31,6 +47,7 @@ export interface TourRecord {
   bookingType: string;
   duration: string;
   image: string;
+  codeName?: string;
   adultPrice: number;
   childPrice: number;
   infantPrice: number;
@@ -72,11 +89,23 @@ export async function saveOrderToAirtable(order: OrderRecord) {
       fields.DepartureTime = order.DepartureTime;
     }
 
-    await base('Orders').create([
+    if (order.booking_status) {
+      fields.booking_status = order.booking_status;
+    }
+
+    if (order.payment_status) {
+      fields.payment_status = order.payment_status;
+    }
+
+    if (order.Adults !== undefined) fields.Adults = order.Adults;
+    if (order.Children !== undefined) fields.Children = order.Children;
+    if (order.Infants !== undefined) fields.Infants = order.Infants;
+
+    await airtableSafe(null, () => base('Orders').create([
       {
         fields: fields
       }
-    ]);
+    ]));
     console.log(`Order ${order.OrderID} saved to Airtable`);
     return true;
   } catch (error) {
@@ -85,29 +114,37 @@ export async function saveOrderToAirtable(order: OrderRecord) {
   }
 }
 
-export async function updateOrderStatusAirtable(orderId: string, status: string, onePayRef: string) {
+export async function updateOrderStatusAirtable(orderId: string, status: string, onePayRef: string, bookingStatus?: string) {
   try {
     // 1. Find the record first
-    const records = await base('Orders').select({
+    const records = await airtableSafe(`order-${orderId}`, () => base('Orders').select({
       filterByFormula: `{OrderID} = '${orderId}'`,
       maxRecords: 1
-    }).firstPage();
+    }).firstPage());
 
     if (records.length === 0) {
       console.warn(`Order ${orderId} not found in Airtable for update`);
       return false;
     }
 
+    const fields: Record<string, string | number | boolean> = {
+      PaymentStatus: status, // Backward compatibility
+      payment_status: status.toLowerCase() === 'paid' ? 'paid' : (status.toLowerCase() === 'failed' ? 'failed' : 'pending'),
+      OnePayRef: onePayRef
+    };
+
+    if (bookingStatus) {
+      fields.booking_status = bookingStatus;
+    }
+
+
     // 2. Update it
-    await base('Orders').update([
+    await airtableSafe(null, () => base('Orders').update([
       {
         id: records[0].id,
-        fields: {
-          PaymentStatus: status,
-          OnePayRef: onePayRef
-        }
+        fields: fields
       }
-    ]);
+    ]));
     console.log(`Order ${orderId} updated to ${status} in Airtable`);
     return records[0]; // Return the full record so we can use it for emails
   } catch (error) {
@@ -118,10 +155,10 @@ export async function updateOrderStatusAirtable(orderId: string, status: string,
 
 export async function getOrderFromAirtable(orderId: string): Promise<OrderRecord | null> {
   try {
-    const records = await base('Orders').select({
+    const records = await airtableSafe(`order-${orderId}`, () => base('Orders').select({
       filterByFormula: `{OrderID} = '${orderId}'`,
       maxRecords: 1
-    }).firstPage();
+    }).firstPage());
 
     if (records.length === 0) return null;
 
@@ -141,25 +178,195 @@ export async function getOrderFromAirtable(orderId: string): Promise<OrderRecord
       TravelDate: record.get('TravelDate') as string,
       ReturnDate: record.get('ReturnDate') as string,
       DepartureTime: record.get('DepartureTime') as string,
+      booking_status: record.get('booking_status') as OrderRecord['booking_status'],
+      payment_status: record.get('payment_status') as OrderRecord['payment_status'],
+      Adults: record.get('Adults') as number,
+      Children: record.get('Children') as number,
+      Infants: record.get('Infants') as number,
     };
+
   } catch (error) {
     console.error('Airtable Get Order Error:', error);
     return null;
   }
 }
 
+// ==========================================
+// TOUR DATES
+// ==========================================
+
+export async function getTourDate(tourId: string, date: string, useCache = true): Promise<TourDateRecord | null> {
+  try {
+    // Use DATETIME_FORMAT to ensure robust date comparison in Airtable
+    const records = await airtableSafe(`tour-date-${tourId}-${date}`, () => base('TourDates').select({
+      filterByFormula: `AND({tourId} = '${tourId}', IS_SAME({date}, '${date}', 'day'))`,
+      maxRecords: 1
+    }).firstPage(), 3, useCache);
+
+
+
+    if (records.length === 0) return null;
+
+    const record = records[0];
+    return {
+      id: record.id,
+      tourId: record.get('tourId') as string,
+      date: record.get('date') as string,
+      date_type: record.get('date_type') as 'pre-set' | 'default',
+      total_slots: Number(record.get('total_slots') || 35),
+    };
+  } catch (error) {
+    console.error('Airtable Get TourDate Error:', error);
+    return null;
+  }
+}
+
+export async function createTourDate(tourDate: TourDateRecord): Promise<TourDateRecord | null> {
+  try {
+    const records = await airtableSafe(null, () => base('TourDates').create([
+      {
+        fields: {
+          tourId: tourDate.tourId,
+          date: tourDate.date,
+          date_type: tourDate.date_type,
+          total_slots: tourDate.total_slots,
+        }
+      }
+    ]));
+
+    if (records.length === 0) return null;
+
+    return {
+      id: records[0].id,
+      tourId: records[0].get('tourId') as string,
+      date: records[0].get('date') as string,
+      date_type: records[0].get('date_type') as 'pre-set' | 'default',
+      total_slots: Number(records[0].get('total_slots') || 35),
+    };
+  } catch (error) {
+    console.error('Airtable Create TourDate Error:', error);
+    return null;
+  }
+}
+
+export async function getOrdersByEmailAndDate(email: string, date: string, useCache = false): Promise<OrderRecord[]> {
+  try {
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    
+    // We search for orders with same email, same travel date, and either paid or pending (within 30 mins)
+    // Using created_at (Created Time) as per requirements
+    // Use IS_SAME for robust date comparison
+    const records = await airtableSafe(null, () => base('Orders').select({
+      filterByFormula: `AND(
+        {Email} = '${email}', 
+        IS_SAME({TravelDate}, '${date}', 'day'),
+        OR(
+          {payment_status} = 'paid',
+          AND({payment_status} = 'pending', IS_AFTER({created_at}, '${thirtyMinutesAgo}'))
+        )
+      )`
+    }).all(), 3, useCache);
+
+
+
+    return records.map(record => ({
+      OrderID: record.get('OrderID') as string,
+      Timestamp: record.get('Timestamp') as string,
+      CustomerName: record.get('CustomerName') as string,
+      Email: record.get('Email') as string,
+      Phone: record.get('Phone') as string,
+      TourID: record.get('TourID') as string,
+      Guests: record.get('Guests') as string,
+      Amount: record.get('Amount') as string,
+      PaymentStatus: record.get('PaymentStatus') as string,
+      OnePayRef: record.get('OnePayRef') as string,
+      FullGuestDetails: record.get('FullGuestDetails') as string,
+      TravelDate: record.get('TravelDate') as string,
+      booking_status: record.get('booking_status') as OrderRecord['booking_status'],
+      payment_status: record.get('payment_status') as OrderRecord['payment_status'],
+    }));
+
+  } catch (error) {
+    console.error('Airtable Get Orders by Email Error:', error);
+    return [];
+  }
+}
+
+export async function getOrdersByTourAndDate(tourId: string, date: string, useCache = true): Promise<OrderRecord[]> {
+  try {
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+
+    const records = await airtableSafe(`orders-${tourId}-${date}`, () => base('Orders').select({
+      filterByFormula: `AND(
+        {TourID} = '${tourId}', 
+        IS_SAME({TravelDate}, '${date}', 'day'),
+        OR(
+          {payment_status} = 'paid',
+          AND({payment_status} = 'pending', IS_AFTER({created_at}, '${thirtyMinutesAgo}'))
+        )
+      )`
+    }).all(), 3, useCache);
+
+
+
+
+    return records.map(record => ({
+      OrderID: record.get('OrderID') as string,
+      Timestamp: record.get('Timestamp') as string,
+      CustomerName: record.get('CustomerName') as string,
+      Email: record.get('Email') as string,
+      Phone: record.get('Phone') as string,
+      TourID: record.get('TourID') as string,
+      Guests: record.get('Guests') as string,
+      Amount: record.get('Amount') as string,
+      PaymentStatus: record.get('PaymentStatus') as string,
+      OnePayRef: record.get('OnePayRef') as string,
+      FullGuestDetails: record.get('FullGuestDetails') as string,
+      TravelDate: record.get('TravelDate') as string,
+      Adults: Number(record.get('Adults') || 0),
+      Children: Number(record.get('Children') || 0),
+      Infants: Number(record.get('Infants') || 0),
+      booking_status: record.get('booking_status') as OrderRecord['booking_status'],
+      payment_status: record.get('payment_status') as OrderRecord['payment_status'],
+    }));
+
+  } catch (error) {
+    console.error('Airtable Get Orders by Tour Error:', error);
+    return [];
+  }
+}
+
+export async function calculateAvailableSlots(tourId: string, date: string, useCache = true): Promise<number> {
+  const tourDate = await getTourDate(tourId, date, useCache);
+  const totalSlots = tourDate ? tourDate.total_slots : 35; // Default 35
+
+  const orders = await getOrdersByTourAndDate(tourId, date, useCache);
+
+  
+  const bookedSlots = orders.reduce((sum, order) => {
+    return sum + (order.Adults || 0) + (order.Children || 0);
+  }, 0);
+
+  return Math.max(0, totalSlots - bookedSlots);
+}
+
+
 // Generate OrderID in format: WEB.TOUR.YYMMDD.NNN
 // Example: WEB.CCBD.260501.001
 export async function generateOrderId(tourId: string, travelDate: string): Promise<string> {
-  // Map common tour IDs to abbreviations
-  const tourCodes: Record<string, string> = {
-    'cu-chi-binh-duong': 'CCBD',
-    'sunset-cruise': 'SC',
-    'mekong-delta': 'MD',
-  };
-
-  // Get tour code or fallback to first 4 chars of ID uppercase
-  const tourCode = tourCodes[tourId] || tourId.substring(0, 4).toUpperCase();
+  let tourCode = tourId.substring(0, 4).toUpperCase(); // Default fallback
+  
+  try {
+    const tours = await getToursFromAirtable();
+    const tour = tours.find(t => t.id === tourId);
+    if (tour && tour.codeName) {
+      tourCode = tour.codeName.toUpperCase();
+    } else {
+      console.warn(`No codeName found for tour ${tourId}, using fallback: ${tourCode}`);
+    }
+  } catch (error) {
+    console.error('Error fetching tour for codeName:', error);
+  }
 
   // Format date as YYMMDD from YYYY-MM-DD string
   const [year, month, day] = travelDate.split('-');
@@ -170,11 +377,11 @@ export async function generateOrderId(tourId: string, travelDate: string): Promi
   try {
     // Search for the highest sequence number for this specific tour and date
     // We search for records where OrderID starts with our prefix
-    const records = await base('Orders').select({
+    const records = await airtableSafe(null, () => base('Orders').select({
       filterByFormula: `FIND('${prefix}', {OrderID}) = 1`,
       sort: [{ field: 'OrderID', direction: 'desc' }],
       maxRecords: 1
-    }).firstPage();
+    }).firstPage());
 
     let nextNumber = 1;
 
@@ -198,6 +405,7 @@ export async function generateOrderId(tourId: string, travelDate: string): Promi
     return `${prefix}${timestamp}`;
   }
 }
+
 
 // ==========================================
 // TOURS
@@ -371,6 +579,7 @@ export async function getToursFromAirtable(): Promise<TourRecord[]> {
         bookingType: getField('bookingType') as string,
         duration: getField('duration') as string,
         image: getField('image') as string,
+        codeName: getField('codeName') as string,
         adultPrice: Number(getField('adultPrice') || 0),
         childPrice: Number(getField('childPrice') || 0),
         infantPrice: Number(getField('infantPrice') || 0),

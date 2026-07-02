@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import BookingSteps from './BookingSteps';
 import { PhoneInput } from 'react-international-phone';
 import 'react-international-phone/style.css';
@@ -483,7 +483,15 @@ interface BookingFormProps {
   onPriceChange?: (price: number) => void;
 }
 
+interface AvailabilityData {
+  totalSlots: number;
+  paidSlots: number;
+  pendingSlots: number;
+  availableSlots: number;
+}
+
 const BOOKING_STEPS = [
+
   { id: 1, label: 'Date & Time' },
   { id: 2, label: 'Guests Amount' },
   { id: 3, label: 'Guest Info' },
@@ -507,6 +515,7 @@ const emptyGuestInfo: GuestInfo = {
 
 // export default function BookingForm({ tourId, tourType, adultPrice, childPrice, infantPrice, onSubmit }: BookingFormProps) {
 export default function BookingForm({
+  tourId,
   tourType,
   adultPrice,
   childPrice,
@@ -517,11 +526,40 @@ export default function BookingForm({
   onPriceChange,
   onSubmit
 }: BookingFormProps) {
+
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedReturnDate, setSelectedReturnDate] = useState('');
   const [selectedTime, setSelectedTime] = useState(startTimes && startTimes.length > 0 ? startTimes[0] : '08:00'); // Default time from Airtable if available
 
+  const [availability, setAvailability] = useState<AvailabilityData | null>(null);
+  const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
+
+  const fetchAvailability = useCallback(async () => {
+    if (!selectedDate) return;
+
+    setIsLoadingAvailability(true);
+    try {
+      const res = await fetch(`/api/tours/availability?tourId=${tourId}&date=${selectedDate}`);
+      if (res.ok) {
+        const data = await res.json();
+        setAvailability(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch availability:', error);
+    } finally {
+      setIsLoadingAvailability(false);
+    }
+  }, [selectedDate, tourId]);
+
+  useEffect(() => {
+    if (currentStep === 2) {
+      fetchAvailability();
+    }
+  }, [currentStep, fetchAvailability]);
+
+
   const [showDatePicker, setShowDatePicker] = useState(false);
+
   // const [datePickerMode, setDatePickerMode] = useState<'start' | 'return'>('start');
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
@@ -562,6 +600,8 @@ export default function BookingForm({
     return price.toLocaleString('vi-VN').replace(/,/g, '.');
   };
 
+  const isSlotExceeded = availability ? (totalGuests > availability.availableSlots) : false;
+
   const handleNextStep = () => {
     // Validation for Step 1
     if (currentStep === 1) {
@@ -570,8 +610,16 @@ export default function BookingForm({
     }
 
     if (currentStep === 2) {
+      // Re-check availability before moving to step 3
+      fetchAvailability();
+      if (isSlotExceeded) {
+        alert(`Sorry, only ${availability?.availableSlots} slots available for this date.`);
+        return;
+      }
+      
       // Initialize guests array based on total count
       setGuests(prevGuests => {
+
         const newGuests = [...prevGuests];
         if (totalGuests > newGuests.length) {
           const guestsToAdd = totalGuests - newGuests.length;
@@ -816,8 +864,30 @@ export default function BookingForm({
     setRooms(newRooms);
   };
 
+  const handleAutofill = () => {
+    const testGuests = guests.map((_, index) => ({
+      firstName: `Guest`,
+      lastName: `Tester`,
+      gender: index % 2 === 0 ? 'male' : 'female',
+      dateOfBirth: '1990-01-01',
+      citizenship: 'VN',
+      residence: 'VN',
+      phone: index === 0 ? '+84983912325' : '',
+      email: index === 0 ? 'test@example.com' : '',
+      idNumber: '123456789',
+      issueDate: '2020-01-01',
+      expiryDate: '2030-01-01',
+      issuingAuthority: 'Police',
+      note: 'Test autofill'
+    }));
+    setGuests(testGuests);
+    setGuestErrors({});
+    setGuestErrorMessages({});
+  };
+
   return (
     <form id="booking-form" className="booking-form" onSubmit={handleSubmit}>
+
       <BookingSteps
         steps={BOOKING_STEPS}
         currentStep={currentStep}
@@ -904,8 +974,23 @@ export default function BookingForm({
       {currentStep === 2 && tourType === 'day-tour' && (
         <div className="booking-form__section">
           <div className="guest-amount-section guest-amount-section--day-tour">
-            <label className="guest-amount-section__label">Party Size</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px' }}>
+              <label className="guest-amount-section__label" style={{ marginBottom: 0 }}>Party Size</label>
+              {isLoadingAvailability ? (
+                <span style={{ fontSize: '12px', color: '#666' }}>Checking availability...</span>
+              ) : availability && (
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: availability.availableSlots < (adults + children) ? '#d32f2f' : '#2e7d32' }}>
+                    {availability.availableSlots} slots available
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#666' }}>
+                    ({availability.paidSlots} paid, {availability.pendingSlots} pending)
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="guest-amount-section__items">
+
               <div className="guest-amount-section__item">
                 <div className="guest-amount-section__item-info">
                   <div className="guest-amount-section__item-label">
@@ -948,7 +1033,13 @@ export default function BookingForm({
             <button type="button" className="btn-secondary" onClick={handlePrevStep}>
               Back
             </button>
-            <button type="button" className="btn-primary" onClick={handleNextStep}>
+            <button 
+              type="button" 
+              className="btn-primary" 
+              onClick={handleNextStep}
+              disabled={isSlotExceeded}
+              style={isSlotExceeded ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+            >
               Continue
             </button>
           </div>
@@ -959,8 +1050,23 @@ export default function BookingForm({
       {currentStep === 2 && tourType === 'overnight-tour' && (
         <div className="booking-form__section">
           <div className="guest-amount-section guest-amount-section--overnight-tour">
-            <label className="guest-amount-section__label">Guest Amount</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px' }}>
+              <label className="guest-amount-section__label" style={{ marginBottom: 0 }}>Guest Amount</label>
+              {isLoadingAvailability ? (
+                <span style={{ fontSize: '12px', color: '#666' }}>Checking availability...</span>
+              ) : availability && (
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: availability.availableSlots < totalGuests ? '#d32f2f' : '#2e7d32' }}>
+                    {availability.availableSlots} slots available
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#666' }}>
+                    ({availability.paidSlots} paid, {availability.pendingSlots} pending)
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="guest-amount-section__items">
+
               {rooms.map((room, index) => (
                 <div key={index} className="guest-amount-section__room">
                   <div className="guest-amount-section__room-title">
@@ -1023,7 +1129,13 @@ export default function BookingForm({
             <button type="button" className="btn-secondary" onClick={handlePrevStep}>
               Back
             </button>
-            <button type="button" className="btn-primary" onClick={handleNextStep}>
+            <button 
+              type="button" 
+              className="btn-primary" 
+              onClick={handleNextStep}
+              disabled={isSlotExceeded}
+              style={isSlotExceeded ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+            >
               Continue
             </button>
           </div>
@@ -1033,12 +1145,25 @@ export default function BookingForm({
       {/* Step 3: Guest Info - Same as before */}
       {currentStep === 3 && (
         <div className="booking-form__section">
-          <p className="booking-form__notice">
-            (*) The details you provide for all guests must match their government-issued photo IDs.
-          </p>
-          <p className="booking-form__notice">
-             Personal information is required for Port Authority submission. Please ensure all details are accurate.
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div>
+              <p className="booking-form__notice" style={{ margin: 0 }}>
+                (*) The details you provide for all guests must match their government-issued photo IDs.
+              </p>
+              <p className="booking-form__notice" style={{ margin: 0 }}>
+                Personal information is required for Port Authority submission.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn-secondary"
+              style={{ padding: '8px 16px', fontSize: '12px', whiteSpace: 'nowrap' }}
+              onClick={handleAutofill}
+            >
+              Autofill Test Data
+            </button>
+          </div>
+
 
           {guests.map((guest, index) => (
             <div key={index} className="guest-form">
