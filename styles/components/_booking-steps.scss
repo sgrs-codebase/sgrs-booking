@@ -20,6 +20,12 @@
     &--inactive {
       opacity: 0.3;
     }
+
+    &--active {
+      .booking-steps__label {
+        font-weight: $font-weight-bold;
+      }
+    }
   }
   
   &__label {
@@ -32,6 +38,15 @@
     line-height: $line-height-tight;
     color: $color-red-brown;
     white-space: nowrap;
+  }
+
+  &__sublabel {
+    font-size: 0.8em;
+    opacity: 0.8;
+
+    @media (max-width: 768px) {
+      display: none;
+    }
   }
   
   &__line {
@@ -64,90 +79,3 @@
   }
 }
 
-// Alternative step visualization with underline
-.step-indicator {
-  display: flex;
-  gap: 19px;
-  width: 100%;
-  
-  &__item {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    position: relative;
-    padding-top: 12px;
-    
-    &--active {
-      .step-indicator__label {
-        opacity: 1;
-      }
-      
-      &::after {
-        background-color: $color-red-brown;
-      }
-    }
-    
-    &--completed {
-      .step-indicator__label {
-        opacity: 0.6;
-      }
-      
-      &::after {
-        background-color: $color-red-brown;
-        opacity: 0.6;
-      }
-    }
-
-    &--clickable {
-      cursor: pointer;
-      transition: opacity 0.2s ease;
-      
-      &:hover {
-        .step-indicator__label {
-          opacity: 1;
-        }
-        
-        &::after {
-          opacity: 1;
-        }
-      }
-    }
-    
-    &--inactive {
-      .step-indicator__label {
-        opacity: 0.3;
-      }
-      
-      &::after {
-        background-color: $color-red-brown;
-        opacity: 0.3;
-      }
-    }
-    
-    &::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background-color: $color-red-brown;
-      transition: opacity $transition-fast;
-    }
-  }
-  
-  &__label {
-    @include font-primary($font-weight-medium);
-    font-size: $font-size-base;
-    line-height: $line-height-tight;
-    color: $color-red-brown;
-    white-space: nowrap;
-  }
-  
-  &__sublabel {
-    @include text-small;
-    margin-top: 0;
-    color: $color-red-brown;
-  }
-}

@@ -6,13 +6,14 @@ import { PhoneInput } from 'react-international-phone';
 import 'react-international-phone/style.css';
 import { isPossiblePhoneNumber, parsePhoneNumber } from 'libphonenumber-js';
 
-// Calendar Icon SVG
+// Calendar Icon SVG (New version matching design)
 const CalendarIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z" stroke="#56231E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M16 2V6" stroke="#56231E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M8 2V6" stroke="#56231E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M3 10H21" stroke="#56231E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M16 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M8 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="12" cy="16" r="2" fill="currentColor" />
   </svg>
 );
 
@@ -26,12 +27,6 @@ const ChevronLeft = () => (
 const ChevronRight = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
     <path d="M9 18L15 12L9 6" stroke="#49454F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const ChevronDown = () => (
-  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-    <path d="M4.5 6.75L9 11.25L13.5 6.75" stroke="#49454F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -174,43 +169,81 @@ interface DatePickerModalProps {
   isRange?: boolean;
   onClose: () => void;
   onSelectDate: (date: string, returnDate?: string) => void;
+  availabilityMap?: { [date: string]: { total: number; booked: number; available: number; times: string[] } };
+  tourId: string;
+  selectedTime: string;
+  startTimes?: string[];
+  onSelectTime?: (time: string) => void;
 }
 
-function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, onClose, onSelectDate }: DatePickerModalProps) {
+function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, onClose, onSelectDate, availabilityMap, tourId, selectedTime, startTimes = ['08:00'], onSelectTime }: DatePickerModalProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   // Local state for range selection
   const [tempStartDate, setTempStartDate] = useState(selectedDate);
   const [tempReturnDate, setTempReturnDate] = useState(selectedReturnDate || '');
-  const [viewMode, setViewMode] = useState<'calendar' | 'month-year'>('calendar');
+  const [tempSelectedTime, setTempSelectedTime] = useState(selectedTime);
+  const [detailedAvailability, setDetailedAvailability] = useState<AvailabilityData | null>(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
 
-  // Reset local state when modal opens
-  if (!isOpen && (tempStartDate !== selectedDate || tempReturnDate !== (selectedReturnDate || ''))) {
-    // This effect logic should be inside useEffect ideally, but for this component structure:
-    // We'll rely on initializing when isOpen becomes true, or just sync on render if simple.
-  }
+  const getDefaultOpenDate = useCallback(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return Object.keys(availabilityMap ?? {})
+      .filter((dateStr) => {
+        const date = new Date(dateStr);
+        return !Number.isNaN(date.getTime()) && date >= today;
+      })
+      .sort()[0] ?? '';
+  }, [availabilityMap]);
 
   // Sync state when modal opens
   const [prevIsOpen, setPrevIsOpen] = useState(false);
-  if (isOpen && !prevIsOpen) {
-    setTempStartDate(selectedDate);
-    setTempReturnDate(selectedReturnDate || '');
-    setViewMode('calendar');
-    setPrevIsOpen(true);
-  } else if (!isOpen && prevIsOpen) {
-    setPrevIsOpen(false);
-  }
+  useEffect(() => {
+    if (isOpen && !prevIsOpen) {
+      const initialDate = selectedDate || getDefaultOpenDate();
+      const initialTimes = initialDate
+        ? (availabilityMap?.[initialDate]?.times ?? startTimes)
+        : startTimes;
+
+      setTempStartDate(initialDate);
+      setTempReturnDate(selectedReturnDate || '');
+      setTempSelectedTime(initialTimes?.[0] || selectedTime || '08:00');
+      setDetailedAvailability(null);
+      setCurrentMonth(initialDate ? new Date(initialDate) : new Date());
+      setPrevIsOpen(true);
+    } else if (!isOpen && prevIsOpen) {
+      setPrevIsOpen(false);
+    }
+  }, [availabilityMap, getDefaultOpenDate, isOpen, prevIsOpen, selectedDate, selectedReturnDate, selectedTime, startTimes]);
+
+  // Fetch detailed availability when tempStartDate or tempSelectedTime changes
+  useEffect(() => {
+    const fetchDetail = async () => {
+      if (!tempStartDate || !isOpen) {
+        setDetailedAvailability(null);
+        return;
+      }
+      setIsDetailLoading(true);
+      try {
+        const res = await fetch(`/api/tours/availability?tourId=${tourId}&date=${tempStartDate}&time=${tempSelectedTime}`);
+        if (res.ok) {
+          const data = await res.json();
+          setDetailedAvailability(data);
+        } else {
+          setDetailedAvailability(null);
+        }
+      } catch (error) {
+        console.error('Failed to fetch detail:', error);
+        setDetailedAvailability(null);
+      } finally {
+        setIsDetailLoading(false);
+      }
+    };
+    fetchDetail();
+  }, [tempStartDate, tourId, isOpen, tempSelectedTime]);
 
   if (!isOpen) return null;
-
-  const formatDisplayDate = (dateStr: string) => {
-    if (!dateStr) return 'Select date';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -221,52 +254,48 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
     const startingDayOfWeek = firstDay.getDay();
 
     const days: (number | null)[] = [];
-
-    // Add empty slots for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
     }
-
-    // Add all days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       days.push(day);
     }
-
     return days;
   };
 
   const handleDateClick = (day: number) => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
-    // Use UTC to avoid timezone issues with string conversion
-    const date = new Date(Date.UTC(year, month, day));
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const checkDate = new Date(year, month, day);
-    if (checkDate < today) return;
+    if (checkDate < today || !availabilityMap?.[dateStr]) return;
 
     if (!isRange) {
-      onSelectDate(dateStr);
-      onClose();
+      setTempStartDate(dateStr);
+      // Update tempSelectedTime to the first available time for this date
+      const nextTimes = availabilityMap?.[dateStr]?.times;
+      if (nextTimes && nextTimes.length > 0) {
+        setTempSelectedTime(nextTimes[0]);
+      } else {
+        setTempSelectedTime(startTimes[0] || '08:00');
+      }
+      // Don't close immediately, let user see right panel
       return;
     }
 
     // Range Selection Logic
     if (!tempStartDate || (tempStartDate && tempReturnDate)) {
-      // Start new selection
       setTempStartDate(dateStr);
       setTempReturnDate('');
     } else {
-      // Complete selection
       if (new Date(dateStr) < new Date(tempStartDate)) {
-        // If clicked date is before start date, swap them or reset
         setTempStartDate(dateStr);
         setTempReturnDate('');
       } else {
         setTempReturnDate(dateStr);
-        // Auto-confirm or wait for OK? Let's auto-confirm for smoother UX or keep OK
       }
     }
   };
@@ -274,7 +303,7 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
   const isDateSelected = (day: number) => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
-    const currentStr = new Date(Date.UTC(year, month, day)).toISOString().split('T')[0];
+    const currentStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
     if (isRange) {
       if (currentStr === tempStartDate) return 'start';
@@ -282,12 +311,7 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
       if (tempStartDate && tempReturnDate && currentStr > tempStartDate && currentStr < tempReturnDate) return 'in-range';
       return '';
     }
-    return currentStr === selectedDate ? 'selected' : '';
-  };
-
-  const handleMonthYearSelect = (month: number, year: number) => {
-    setCurrentMonth(new Date(year, month, 1));
-    setViewMode('calendar');
+    return currentStr === tempStartDate ? 'selected' : '';
   };
 
   const handlePrevMonth = () => {
@@ -299,17 +323,18 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
   };
 
   const handleConfirm = () => {
+    if (onSelectTime) {
+      onSelectTime(tempSelectedTime);
+    }
     if (isRange) {
       if (tempStartDate && tempReturnDate) {
         onSelectDate(tempStartDate, tempReturnDate);
         onClose();
-      } else if (tempStartDate) {
-        // Allow selecting just start date initially? Or force return date?
-        // For now, require both
+      } else {
         alert('Please select a return date');
       }
-    } else {
-      // Should not happen as single date closes on click
+    } else if (tempStartDate) {
+      onSelectDate(tempStartDate);
       onClose();
     }
   };
@@ -320,132 +345,131 @@ function DatePickerModal({ isOpen, selectedDate, selectedReturnDate, isRange, on
     weeks.push(days.slice(i, i + 7));
   }
 
-  const monthYear = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  const currentYear = currentMonth.getFullYear();
+  const selectedDateObj = tempStartDate ? new Date(tempStartDate) : null;
+  const dayName = selectedDateObj?.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+  const dayNum = selectedDateObj?.getDate();
+  const selectedDayAvailability = tempStartDate ? availabilityMap?.[tempStartDate] : undefined;
 
-  // Generate years for month/year view (current year - 1 to current year + 5)
-  const years = Array.from({ length: 7 }, (_, i) => currentYear - 1 + i);
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
+  // Get times for the currently selected temporary date
+  const availableTimes = (selectedDayAvailability?.times?.length ?? 0) > 0
+    ? selectedDayAvailability?.times ?? startTimes
+    : (startTimes.length > 0 ? startTimes : ['08:00']);
 
   return (
     <>
       <div className="date-picker-overlay" onClick={onClose} />
-      <div className="date-picker-modal">
-        <div className="date-picker-modal__header">
-          <div className="date-picker-modal__header-content">
-            <div className="date-picker-modal__label">
-              {isRange ? 'Select Dates' : 'Select date'}
+      <div className="date-picker-modal-v2">
+        <div className="date-picker-modal-v2__left">
+          <div className="date-picker-modal-v2__calendar-header">
+            <div className="date-picker-modal-v2__month-display">
+              <span className="month">{currentMonth.toLocaleDateString('en-US', { month: 'long' })}</span>
+              <span className="year">{currentMonth.getFullYear()}</span>
             </div>
-            <div className="date-picker-modal__selected-date">
-              {isRange ? (
-                <>
-                  {formatDisplayDate(tempStartDate)}
-                  {tempReturnDate && ` - ${formatDisplayDate(tempReturnDate)}`}
-                </>
-              ) : (
-                formatDisplayDate(selectedDate)
-              )}
+            <div className="date-picker-modal-v2__month-nav">
+              <button type="button" onClick={handlePrevMonth}><ChevronLeft /></button>
+              <button type="button" onClick={handleNextMonth}><ChevronRight /></button>
             </div>
           </div>
-          <button type="button" className="date-picker-modal__close-btn" onClick={onClose}>
-            <CloseIcon />
-          </button>
-        </div>
 
-        {viewMode === 'calendar' ? (
-          <>
-            <div className="date-picker-modal__month-selector">
-              <button
-                type="button"
-                className="date-picker-modal__month-btn"
-                onClick={() => setViewMode('month-year')}
-              >
-                <span>{monthYear}</span>
-                <ChevronDown />
-              </button>
-              <div className="date-picker-modal__month-controls">
-                <button type="button" className="date-picker-modal__nav-btn" onClick={handlePrevMonth}>
-                  <ChevronLeft />
-                </button>
-                <button type="button" className="date-picker-modal__nav-btn" onClick={handleNextMonth}>
-                  <ChevronRight />
-                </button>
-              </div>
+          <div className="date-picker-modal-v2__calendar-grid">
+            <div className="date-picker-modal-v2__weekdays">
+              {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => <div key={d}>{d}</div>)}
             </div>
 
-            <div className="date-picker-modal__calendar">
-              <div className="date-picker-modal__weekdays">
-                <div>S</div>
-                <div>M</div>
-                <div>T</div>
-                <div>W</div>
-                <div>T</div>
-                <div>F</div>
-                <div>S</div>
-              </div>
+            {weeks.map((week, weekIndex) => (
+              <div key={weekIndex} className="date-picker-modal-v2__week">
+                {week.map((day, dayIndex) => {
+                  const selectionState = day ? isDateSelected(day) : '';
+                  const year = currentMonth.getFullYear();
+                  const month = currentMonth.getMonth();
+                  const dateStr = day ? `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}` : '';
+                  const isPast = day ? (new Date(year, month, day).getTime() < new Date().setHours(0, 0, 0, 0)) : false;
+                  const hasTour = dateStr && availabilityMap?.[dateStr];
 
-              {weeks.map((week, weekIndex) => (
-                <div key={weekIndex} className="date-picker-modal__week">
-                  {week.map((day, dayIndex) => {
-                    const selectionState = day ? isDateSelected(day) : '';
-                    const isPast = day ? (new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day).getTime() < new Date().setHours(0, 0, 0, 0)) : false;
-                    return (
-                      <div key={dayIndex} className={`date-picker-modal__day ${!day ? 'date-picker-modal__day--empty' : ''} ${selectionState ? `date-picker-modal__day--${selectionState}` : ''} ${isPast ? 'date-picker-modal__day--past' : ''}`}>
+                  return (
+                    <div 
+                      key={dayIndex} 
+                      className={`date-picker-modal-v2__day ${!day ? 'empty' : ''} ${selectionState ? `is-${selectionState}` : ''} ${isPast ? 'is-past' : ''} ${hasTour ? 'has-tour' : ''}`}
+                    >
+                      {day && (
                         <button
                           type="button"
-                          onClick={() => day && handleDateClick(day)}
-                          className={selectionState === 'selected' || selectionState === 'start' || selectionState === 'end' ? 'selected' : ''}
-                          disabled={!day || isPast}
+                          onClick={() => handleDateClick(day)}
+                          disabled={isPast || !hasTour}
                         >
-                          {day || ''}
+                          {day}
                         </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-          </>
-        ) : (
-          <div className="date-picker-modal__month-year-view">
-            <div className="month-year-grid">
-              {years.map(year => (
-                <div key={year} className="month-year-grid__year-section">
-                  <div className="month-year-grid__year-label">{year}</div>
-                  <div className="month-year-grid__months">
-                    {months.map((month, index) => (
-                      <button
-                        type="button"
-                        key={month}
-                        className={`month-year-grid__month-btn ${currentMonth.getMonth() === index && currentMonth.getFullYear() === year ? 'current' : ''
-                          }`}
-                        onClick={() => handleMonthYearSelect(index, year)}
-                      >
-                        {month.slice(0, 3)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
           </div>
-        )}
 
-        <div className="date-picker-modal__actions">
-          <div></div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button type="button" className="date-picker-modal__action-btn" onClick={onClose}>Cancel</button>
-            <button type="button" className="date-picker-modal__action-btn" onClick={handleConfirm}>OK</button>
+          <div className="date-picker-modal-v2__contact-section">
+            <p>To book dates outside of SGRS&apos;s departure schedule, please contact the Sales team for assistance.</p>
+            <div className="date-picker-modal-v2__contact-pills">
+              <a href="tel:+84983912325" className="contact-pill">Hotline</a>
+              <a href="https://wa.me/84983912325" target="_blank" rel="noopener noreferrer" className="contact-pill">Whatsapp</a>
+              <a href="https://zalo.me/84983912325" target="_blank" rel="noopener noreferrer" className="contact-pill">Zalo</a>
+              <a href="mailto:sales@saigonriverstar.com" className="contact-pill">Email</a>
+            </div>
           </div>
+
+          <div className="date-picker-modal-v2__timezone">
+            Asia/Ho Chi Minh GMT +7:00
+          </div>
+        </div>
+
+        <div className="date-picker-modal-v2__right">
+          <button type="button" className="date-picker-modal-v2__close-x" onClick={onClose}>
+            <CloseIcon />
+          </button>
+
+          {tempStartDate && (
+            <div className="date-picker-modal-v2__selection-info">
+              <div className="date-picker-modal-v2__selected-day-large">
+                <span className="day-name">{dayName}</span>
+                <span className="day-num">{dayNum}</span>
+              </div>
+
+              {isDetailLoading ? (
+                <div className="date-picker-modal-v2__loading">Checking slots...</div>
+              ) : (
+                <div className="date-picker-modal-v2__time-slots">
+                  {availableTimes.map(time => (
+                    <div 
+                      key={time}
+                      className={`date-picker-modal-v2__time-slot-card ${tempSelectedTime === time ? 'date-picker-modal-v2__time-slot-card--selected' : ''}`}
+                      onClick={() => setTempSelectedTime(time)}
+                    >
+                      <div className="time">{time}</div>
+                      <div className="slots">
+                        {tempSelectedTime === time && detailedAvailability 
+                          ? `${detailedAvailability.availableSlots} Seats available` 
+                          : (availabilityMap?.[tempStartDate] ? `${availabilityMap[tempStartDate].available} Seats available` : 'Check availability')}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button 
+                type="button" 
+                className="btn-primary date-picker-modal-v2__continue"
+                onClick={handleConfirm}
+                disabled={isDetailLoading || (!detailedAvailability && !availabilityMap?.[tempStartDate]) || (detailedAvailability?.availableSlots === 0)}
+              >
+                Continue
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </>
   );
 }
-
 interface GuestInfo {
   firstName: string;
   lastName: string;
@@ -477,10 +501,12 @@ interface BookingFormProps {
     children: number;
     infants: number;
     guests: GuestInfo[];
+    paymentMethod: 'onepay' | 'qr_bank';
   }) => void;
   currentStep: number;
   onStepChange: (step: number) => void;
   onPriceChange?: (price: number) => void;
+  isSubmitting?: boolean;
 }
 
 interface AvailabilityData {
@@ -524,22 +550,58 @@ export default function BookingForm({
   currentStep,
   onStepChange,
   onPriceChange,
+  isSubmitting = false,
   onSubmit
 }: BookingFormProps) {
 
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedReturnDate, setSelectedReturnDate] = useState('');
   const [selectedTime, setSelectedTime] = useState(startTimes && startTimes.length > 0 ? startTimes[0] : '08:00'); // Default time from Airtable if available
+  const [paymentMethod, setPaymentMethod] = useState<'onepay' | 'qr_bank'>('onepay');
+  const [hasCopiedQrAmount, setHasCopiedQrAmount] = useState(false);
 
   const [availability, setAvailability] = useState<AvailabilityData | null>(null);
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
+  const [openDatesMap, setOpenDatesMap] = useState<{ [date: string]: { total: number; booked: number; available: number; times: string[] } }>({});
+
+  const fetchOpenDates = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/tours/open-dates?tourId=${tourId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const map: { [date: string]: { total: number; booked: number; available: number; times: string[] } } = {};
+        data.openDates.forEach((d: { date: string; departure_time?: string; total_slots: number }) => {
+          const normalizedDate = normalizeOpenDateKey(d.date);
+          if (!normalizedDate) return;
+
+          if (!map[normalizedDate]) {
+            map[normalizedDate] = { total: d.total_slots, booked: 0, available: d.total_slots, times: [] };
+          }
+          if (d.departure_time) {
+            map[normalizedDate].times.push(d.departure_time);
+          }
+        });
+        setOpenDatesMap(map);
+      }
+    } catch (error) {
+      console.error('Failed to fetch open dates:', error);
+    }
+  }, [tourId]);
+
+  useEffect(() => {
+    fetchOpenDates();
+  }, [fetchOpenDates]);
+
+  const normalizeOpenDateKey = (dateValue: string) => {
+    return String(dateValue || '').split('T')[0];
+  };
 
   const fetchAvailability = useCallback(async () => {
     if (!selectedDate) return;
 
     setIsLoadingAvailability(true);
     try {
-      const res = await fetch(`/api/tours/availability?tourId=${tourId}&date=${selectedDate}`);
+      const res = await fetch(`/api/tours/availability?tourId=${tourId}&date=${selectedDate}&time=${selectedTime}`);
       if (res.ok) {
         const data = await res.json();
         setAvailability(data);
@@ -549,7 +611,7 @@ export default function BookingForm({
     } finally {
       setIsLoadingAvailability(false);
     }
-  }, [selectedDate, tourId]);
+  }, [selectedDate, selectedTime, tourId]);
 
   useEffect(() => {
     if (currentStep === 2) {
@@ -573,18 +635,14 @@ export default function BookingForm({
     ? rooms.reduce((sum, room) => sum + room.adults + room.children + room.infants, 0)
     : adults + children + infants;
 
-  useEffect(() => {
-    const calculatePrice = () => {
-      if (tourType === 'overnight-tour') {
-        return rooms.reduce((sum, room) =>
-          sum + (room.adults * adultPrice) + (room.children * childPrice) + (room.infants * infantPrice), 0);
-      }
-      return (adults * adultPrice) + (children * childPrice) + (infants * infantPrice);
-    };
+  const currentTotalPrice = tourType === 'overnight-tour'
+    ? rooms.reduce((sum, room) =>
+      sum + (room.adults * adultPrice) + (room.children * childPrice) + (room.infants * infantPrice), 0)
+    : (adults * adultPrice) + (children * childPrice) + (infants * infantPrice);
 
-    const newPrice = calculatePrice();
-    onPriceChange?.(newPrice);
-  }, [tourType, rooms, adults, children, infants, adultPrice, childPrice, infantPrice, onPriceChange]);
+  useEffect(() => {
+    onPriceChange?.(currentTotalPrice);
+  }, [currentTotalPrice, onPriceChange]);
 
   const formatDisplayDate = (dateStr: string) => {
     if (!dateStr) return '';
@@ -596,8 +654,166 @@ export default function BookingForm({
     });
   };
 
+  const formatDateDDMMYYYY = (dateStr: string) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   const formatPrice = (price: number) => {
     return price.toLocaleString('vi-VN').replace(/,/g, '.');
+  };
+
+  const qrBankDetails = {
+    bankId: 'mb',
+    accountNumber: '1234567890',
+    merchantName: 'CT TNHH DT VA PT SAI GON RIVER STAR',
+  };
+
+  const qrPreviewUrl = '/QR.png';
+
+  const handleCopyQrAmount = async () => {
+    try {
+      await navigator.clipboard.writeText(`${currentTotalPrice}`);
+      setHasCopiedQrAmount(true);
+      window.setTimeout(() => setHasCopiedQrAmount(false), 1600);
+    } catch (error) {
+      console.error('Failed to copy QR amount:', error);
+    }
+  };
+
+  const handleDownloadQr = () => {
+    const link = document.createElement('a');
+    link.href = qrPreviewUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.download = 'sgrs-qr-code.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const validateGuestsBeforePayment = () => {
+    const errors: { [guestIndex: number]: { [field: string]: boolean } } = {};
+    const errorMessages: string[] = [];
+    let hasError = false;
+
+    for (let i = 0; i < guests.length; i++) {
+      const g = guests[i];
+      const guestErrorFields: { [field: string]: boolean } = {};
+      const guestLabel = i === 0 ? 'Primary Guest' : `Guest ${i + 1}`;
+
+      if (!g.firstName || !validateName(g.firstName)) {
+        guestErrorFields.firstName = true;
+        if (g.firstName && !validateName(g.firstName)) {
+          errorMessages.push(`${guestLabel}: Invalid first name`);
+        }
+      }
+
+      if (!g.lastName || !validateName(g.lastName)) {
+        guestErrorFields.lastName = true;
+        if (g.lastName && !validateName(g.lastName)) {
+          errorMessages.push(`${guestLabel}: Invalid last name`);
+        }
+      }
+
+      if (!g.gender) guestErrorFields.gender = true;
+
+      if (!g.dateOfBirth) {
+        guestErrorFields.dateOfBirth = true;
+      } else {
+        const dobValidation = validateDateOfBirth(g.dateOfBirth);
+        if (!dobValidation.isValid) {
+          guestErrorFields.dateOfBirth = true;
+          errorMessages.push(`${guestLabel}: ${dobValidation.message}`);
+        }
+      }
+
+      if (!g.citizenship) guestErrorFields.citizenship = true;
+      if (!g.residence) guestErrorFields.residence = true;
+
+      if (!g.idNumber) guestErrorFields.idNumber = true;
+      if (!g.issueDate) guestErrorFields.issueDate = true;
+      if (!g.expiryDate) guestErrorFields.expiryDate = true;
+
+      if (g.issueDate && g.expiryDate) {
+        const dateValidation = validateIDDates(g.issueDate, g.expiryDate);
+        if (!dateValidation.isValid) {
+          guestErrorFields.issueDate = true;
+          guestErrorFields.expiryDate = true;
+          errorMessages.push(`${guestLabel}: ${dateValidation.message}`);
+        }
+      }
+
+      if (!g.issuingAuthority) guestErrorFields.issuingAuthority = true;
+
+      if (i === 0) {
+        if (!g.phone) {
+          guestErrorFields.phone = true;
+        } else {
+          const phoneValidation = validatePhone(g.phone);
+          if (!phoneValidation.isValid) {
+            guestErrorFields.phone = true;
+            errorMessages.push(`${guestLabel}: ${phoneValidation.message}`);
+          }
+        }
+
+        if (!g.email) {
+          guestErrorFields.email = true;
+        } else if (!validateEmail(g.email)) {
+          guestErrorFields.email = true;
+          errorMessages.push(`${guestLabel}: Invalid email address`);
+        }
+      }
+
+      if (Object.keys(guestErrorFields).length > 0) {
+        errors[i] = guestErrorFields;
+        hasError = true;
+      }
+    }
+
+    if (hasError) {
+      setGuestErrors(errors);
+      const message = errorMessages.length > 0
+        ? 'Please fix the following errors:\n\n' + errorMessages.join('\n')
+        : 'Please fill in all required fields for all guests';
+      alert(message);
+      return false;
+    }
+
+    return true;
+  };
+
+  const submitBooking = (selectedPaymentMethod: 'onepay' | 'qr_bank') => {
+    const guestsWithDefaults = guests.map(guest => ({
+      ...guest,
+      note: guest.note && guest.note.trim() ? guest.note : 'None'
+    }));
+
+    onSubmit({
+      date: selectedDate,
+      returnDate: selectedReturnDate,
+      time: selectedTime,
+      adults: tourType === 'overnight-tour' ? rooms.reduce((sum, r) => sum + r.adults, 0) : adults,
+      children: tourType === 'overnight-tour' ? rooms.reduce((sum, r) => sum + r.children, 0) : children,
+      infants: tourType === 'overnight-tour' ? rooms.reduce((sum, r) => sum + r.infants, 0) : infants,
+      guests: guestsWithDefaults,
+      paymentMethod: selectedPaymentMethod,
+    });
+  };
+
+  const handleOnePaySelection = () => {
+    if (isSubmitting) return;
+    setPaymentMethod('onepay');
+
+    if (!validateGuestsBeforePayment()) {
+      return;
+    }
+
+    submitBooking('onepay');
   };
 
   const isSlotExceeded = availability ? (totalGuests > availability.availableSlots) : false;
@@ -738,118 +954,20 @@ export default function BookingForm({
     e.preventDefault();
 
     // Validation for Step 3 (Guest Info)
-    if (currentStep === 3) {
-      // Validate Guest Info
-      const errors: { [guestIndex: number]: { [field: string]: boolean } } = {};
-      const errorMessages: string[] = [];
-      let hasError = false;
-
-      for (let i = 0; i < guests.length; i++) {
-        const g = guests[i];
-        const guestErrorFields: { [field: string]: boolean } = {};
-        const guestLabel = i === 0 ? 'Primary Guest' : `Guest ${i + 1}`;
-
-        if (!g.firstName || !validateName(g.firstName)) {
-          guestErrorFields.firstName = true;
-          if (g.firstName && !validateName(g.firstName)) {
-            errorMessages.push(`${guestLabel}: Invalid first name`);
-          }
-        }
-
-        if (!g.lastName || !validateName(g.lastName)) {
-          guestErrorFields.lastName = true;
-          if (g.lastName && !validateName(g.lastName)) {
-            errorMessages.push(`${guestLabel}: Invalid last name`);
-          }
-        }
-
-        if (!g.gender) guestErrorFields.gender = true;
-
-        if (!g.dateOfBirth) {
-          guestErrorFields.dateOfBirth = true;
-        } else {
-          const dobValidation = validateDateOfBirth(g.dateOfBirth);
-          if (!dobValidation.isValid) {
-            guestErrorFields.dateOfBirth = true;
-            errorMessages.push(`${guestLabel}: ${dobValidation.message}`);
-          }
-        }
-
-        if (!g.citizenship) guestErrorFields.citizenship = true;
-        if (!g.residence) guestErrorFields.residence = true;
-
-        if (!g.idNumber) {
-          guestErrorFields.idNumber = true;
-        }
-
-        if (!g.issueDate) {
-          guestErrorFields.issueDate = true;
-        }
-        if (!g.expiryDate) {
-          guestErrorFields.expiryDate = true;
-        }
-
-        if (g.issueDate && g.expiryDate) {
-          const dateValidation = validateIDDates(g.issueDate, g.expiryDate);
-          if (!dateValidation.isValid) {
-            guestErrorFields.issueDate = true;
-            guestErrorFields.expiryDate = true;
-            errorMessages.push(`${guestLabel}: ${dateValidation.message}`);
-          }
-        }
-
-        if (!g.issuingAuthority) guestErrorFields.issuingAuthority = true;
-
-        // Phone and email only required for primary guest (index 0)
-        if (i === 0) {
-          if (!g.phone) {
-            guestErrorFields.phone = true;
-          } else {
-            const phoneValidation = validatePhone(g.phone);
-            if (!phoneValidation.isValid) {
-              guestErrorFields.phone = true;
-              errorMessages.push(`${guestLabel}: ${phoneValidation.message}`);
-            }
-          }
-
-          if (!g.email) {
-            guestErrorFields.email = true;
-          } else if (!validateEmail(g.email)) {
-            guestErrorFields.email = true;
-            errorMessages.push(`${guestLabel}: Invalid email address`);
-          }
-        }
-
-        if (Object.keys(guestErrorFields).length > 0) {
-          errors[i] = guestErrorFields;
-          hasError = true;
-        }
-      }
-
-      if (hasError) {
-        setGuestErrors(errors);
-        const message = errorMessages.length > 0
-          ? 'Please fix the following errors:\n\n' + errorMessages.join('\n')
-          : 'Please fill in all required fields for all guests';
-        alert(message);
+    if (currentStep === 3 || currentStep === 4) {
+      if (!validateGuestsBeforePayment()) {
         return;
       }
 
-      const guestsWithDefaults = guests.map(guest => ({
-        ...guest,
-        note: guest.note && guest.note.trim() ? guest.note : 'None'
-      }));
+      // If we are in step 3 and everything is valid, move to step 4
+      if (currentStep === 3) {
+        onStepChange(4);
+        return;
+      }
 
-      // Submit form
-      onSubmit({
-        date: selectedDate,
-        returnDate: selectedReturnDate,
-        time: selectedTime,
-        adults: tourType === 'overnight-tour' ? rooms.reduce((sum, r) => sum + r.adults, 0) : adults,
-        children: tourType === 'overnight-tour' ? rooms.reduce((sum, r) => sum + r.children, 0) : children,
-        infants: tourType === 'overnight-tour' ? rooms.reduce((sum, r) => sum + r.infants, 0) : infants,
-        guests: guestsWithDefaults,
-      });
+      if (currentStep === 4) {
+        submitBooking(paymentMethod);
+      }
       return;
     }
   };
@@ -904,68 +1022,56 @@ export default function BookingForm({
           <div className="date-time-section">
             <div className="date-time-section__picker">
               <label className="date-time-section__label">Check availability:</label>
-              <div className="date-time-section__input-wrapper date-time-section__input-wrapper--combined">
-                <input
-                  type="text"
-                  value={
+              <div 
+                className="date-time-section__input-wrapper date-time-section__input-wrapper--combined"
+                onClick={() => setShowDatePicker(true)}
+                style={{ cursor: 'pointer' }}
+              >
+                <div className="date-time-section__display-value">
+                  {selectedDate ? (
                     tourType === 'overnight-tour' && selectedReturnDate
-                      ? `${formatDisplayDate(selectedDate)} - ${formatDisplayDate(selectedReturnDate)}`
-                      : formatDisplayDate(selectedDate)
-                  }
-                  onClick={() => setShowDatePicker(true)}
-                  readOnly
-                  placeholder={tourType === 'overnight-tour' ? "Select dates" : "DD/MM/YYYY"}
-                />
+                      ? `${formatDateDDMMYYYY(selectedDate)} - ${formatDateDDMMYYYY(selectedReturnDate)}`
+                      : formatDateDDMMYYYY(selectedDate)
+                  ) : (
+                    "DD/MM/YYYY"
+                  )}
+                </div>
 
-                <div className="date-time-section__time-wrapper">
-                  <select
-                    className="date-time-section__time-select"
-                    value={selectedTime}
-                    onChange={(e) => setSelectedTime(e.target.value)}
-                  >
-                    {startTimes && startTimes.length > 0 ? (
-                      startTimes.map((time) => (
-                        <option key={time} value={time}>
-                          {time}
-                        </option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="07:00">07:00</option>
-                        <option value="07:30">07:30</option>
-                        <option value="08:00">08:00</option>
-                        <option value="08:30">08:30</option>
-                        <option value="09:00">09:00</option>
-                        <option value="09:30">09:30</option>
-                        <option value="10:00">10:00</option>
-                        <option value="13:00">13:00</option>
-                        <option value="13:30">13:30</option>
-                        <option value="14:00">14:00</option>
-                        <option value="17:00">17:00</option>
-                        <option value="18:00">18:00</option>
-                        <option value="19:00">19:00</option>
-                      </>
-                    )}
-                  </select>
+                <div className="date-time-section__departure-display">
+                  Departure: {selectedTime}
                 </div>
 
                 <div className="date-time-section__icon">
-                  <div className="icon-container">
-                    <CalendarIcon />
-                  </div>
+                  <CalendarIcon />
                 </div>
               </div>
             </div>
-          </div>
-          <div className="booking-form__actions">
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={handleNextStep}
-              disabled={!selectedDate || (tourType === 'overnight-tour' && !selectedReturnDate)}
-            >
-              Continue
-            </button>
+
+            <div className="date-time-section__footer">
+              <div className="date-time-section__contact-block">
+                <p className="date-time-section__contact-note">
+                  To book dates outside of SGRS&apos;s departure schedule, please contact the Sales team for assistance.
+                </p>
+
+                <div className="date-time-section__contact-pills">
+                  <a href="tel:+84983912325" className="date-time-section__contact-pill">Hotline</a>
+                  <a href="https://wa.me/84983912325" target="_blank" rel="noopener noreferrer" className="date-time-section__contact-pill">Whatsapp</a>
+                  <a href="https://zalo.me/84983912325" target="_blank" rel="noopener noreferrer" className="date-time-section__contact-pill">Zalo</a>
+                  <a href="mailto:sales@saigonriverstar.com" className="date-time-section__contact-pill">Email</a>
+                </div>
+              </div>
+
+              <div className="date-time-section__actions">
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={handleNextStep}
+                  disabled={!selectedDate || (tourType === 'overnight-tour' && !selectedReturnDate)}
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -974,20 +1080,8 @@ export default function BookingForm({
       {currentStep === 2 && tourType === 'day-tour' && (
         <div className="booking-form__section">
           <div className="guest-amount-section guest-amount-section--day-tour">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px' }}>
+            <div style={{ marginBottom: '16px' }}>
               <label className="guest-amount-section__label" style={{ marginBottom: 0 }}>Party Size</label>
-              {isLoadingAvailability ? (
-                <span style={{ fontSize: '12px', color: '#666' }}>Checking availability...</span>
-              ) : availability && (
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '14px', fontWeight: 600, color: availability.availableSlots < (adults + children) ? '#d32f2f' : '#2e7d32' }}>
-                    {availability.availableSlots} slots available
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#666' }}>
-                    ({availability.paidSlots} paid, {availability.pendingSlots} pending)
-                  </div>
-                </div>
-              )}
             </div>
             <div className="guest-amount-section__items">
 
@@ -1050,20 +1144,8 @@ export default function BookingForm({
       {currentStep === 2 && tourType === 'overnight-tour' && (
         <div className="booking-form__section">
           <div className="guest-amount-section guest-amount-section--overnight-tour">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px' }}>
+            <div style={{ marginBottom: '16px' }}>
               <label className="guest-amount-section__label" style={{ marginBottom: 0 }}>Guest Amount</label>
-              {isLoadingAvailability ? (
-                <span style={{ fontSize: '12px', color: '#666' }}>Checking availability...</span>
-              ) : availability && (
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '14px', fontWeight: 600, color: availability.availableSlots < totalGuests ? '#d32f2f' : '#2e7d32' }}>
-                    {availability.availableSlots} slots available
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#666' }}>
-                    ({availability.paidSlots} paid, {availability.pendingSlots} pending)
-                  </div>
-                </div>
-              )}
             </div>
             <div className="guest-amount-section__items">
 
@@ -1398,6 +1480,94 @@ export default function BookingForm({
         </div>
       )}
 
+      {/* Step 4: Payment Selection */}
+      {currentStep === 4 && (
+        <div className="booking-form__section">
+          <div className="payment-method-section">
+            <label className="payment-method-section__label">Payment</label>
+            <div className="payment-method-section__options">
+              {paymentMethod === 'qr_bank' ? (
+                <div className="payment-bank-panel">
+                  <div className="payment-bank-panel__content">
+                    <div className="payment-bank-panel__details">
+                      <h3 className="payment-bank-panel__title">Internet Banking (for local transcation)</h3>
+
+                      <div className="payment-bank-panel__meta">
+                        <div className="payment-bank-panel__meta-block">
+                          <span className="label">Order Value:</span>
+                          <div className="value-row">
+                            <span className="value">{formatPrice(currentTotalPrice)} VND</span>
+                            <button type="button" className="copy-btn" onClick={handleCopyQrAmount}>
+                              {hasCopiedQrAmount ? 'COPIED' : 'COPY'}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="payment-bank-panel__meta-block">
+                          <span className="label">Transaction Fee:</span>
+                          <span className="value">0 VND</span>
+                        </div>
+
+                        <div className="payment-bank-panel__meta-block">
+                          <span className="label">Merchant:</span>
+                          <span className="value merchant">{qrBankDetails.merchantName}</span>
+                        </div>
+                      </div>
+
+                      <div className="payment-bank-panel__actions">
+                        <button type="submit" className="btn-primary payment-bank-panel__confirm">
+                          Confirm
+                        </button>
+                        <button type="button" className="btn-secondary payment-bank-panel__download" onClick={handleDownloadQr}>
+                          Download QR Code
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="payment-bank-panel__qr">
+                      <p className="payment-bank-panel__qr-title">
+                        Scan the QR Code Using Your Banking App or E-Wallet
+                      </p>
+                      <div className="payment-bank-panel__qr-card">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={qrPreviewUrl} alt="Local bank transfer QR code" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="payment-method-card"
+                  onClick={() => setPaymentMethod('qr_bank')}
+                >
+                  <div className="payment-method-card__info">
+                    <div className="payment-method-card__name">Local Bank Transfer</div>
+                  </div>
+                </button>
+              )}
+
+              <button
+                type="button"
+                className={`payment-method-card ${paymentMethod === 'onepay' ? 'payment-method-card--selected' : ''} ${isSubmitting ? 'payment-method-card--loading' : ''}`}
+                onClick={handleOnePaySelection}
+                disabled={isSubmitting}
+              >
+                <div className="payment-method-card__info">
+                  <div className="payment-method-card__name">
+                    International Card Payment
+                    {isSubmitting && paymentMethod === 'onepay' && (
+                      <span className="spinner spinner--small" style={{ marginLeft: '10px' }} />
+                    )}
+                  </div>
+                  <div className="payment-method-card__desc">(Visa/Mastercard/JCB/UnionPay/Amex)</div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <DatePickerModal
         isOpen={showDatePicker}
         selectedDate={selectedDate}
@@ -1408,8 +1578,16 @@ export default function BookingForm({
           setSelectedDate(date);
           if (returnDate) setSelectedReturnDate(returnDate);
           else if (tourType !== 'overnight-tour') setSelectedReturnDate(''); // Clear return date if single selection mode
+          
           setShowDatePicker(false);
         }}
+        availabilityMap={openDatesMap}
+        tourId={tourId}
+        selectedTime={selectedTime}
+        startTimes={selectedDate && openDatesMap[selectedDate]?.times?.length > 0 
+          ? openDatesMap[selectedDate].times 
+          : (startTimes && startTimes.length > 0 ? startTimes : ['08:00'])}
+        onSelectTime={setSelectedTime}
       />
     </form>
   );

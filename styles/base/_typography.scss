@@ -59,3 +59,30 @@ body {
 .text-white {
   color: $color-white;
 }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(86, 35, 30, 0.2); // $color-red-brown in RGB
+  border-top-color: $color-red-brown;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  vertical-align: middle;
+
+  &--white {
+    border-color: rgba(255, 255, 255, 0.2);
+    border-top-color: $color-white;
+  }
+
+  &--small {
+    width: 14px;
+    height: 14px;
+    border-width: 1.5px;
+  }
+}

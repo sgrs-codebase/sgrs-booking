@@ -5,20 +5,14 @@ import {
   generateOrderId, 
   getOrdersByEmailAndDate, 
   getTourDate, 
-  createTourDate, 
-  calculateAvailableSlots,
-  getOrdersByTourAndDate
+  calculateAvailableSlots
 } from '@/lib/airtable';
 import { buildPaymentUrl, OnePayParams } from '@/lib/onepay';
-import { Resend } from 'resend';
-import { AwaitingConfirmation } from '@/components/emails/AwaitingConfirmation';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { tourId, adults: adultsRaw, children: childrenRaw, infants: infantsRaw, customerInfo, date, returnDate, time, guests } = body;
+    const { tourId, adults: adultsRaw, children: childrenRaw, infants: infantsRaw, customerInfo, date, returnDate, time, guests, paymentMethod } = body;
 
     const adults = Number(adultsRaw || 0);
     const children = Number(childrenRaw || 0);
@@ -64,29 +58,29 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // 3. Get/Create TourDate record and Check Availability - NO CACHE
-    let tourDate = await getTourDate(tourId, date, false);
+    // 3. Get TourDate record and Check Availability - NO CACHE
+    // We no longer automatically create TourDate records. They must be pre-set in Airtable.
+    const tourDate = await getTourDate(tourId, date, time || undefined, false);
+    
     if (!tourDate) {
-      // Double check without cache just in case of race conditions
-      const secondCheck = await getTourDate(tourId, date, false);
-      if (!secondCheck) {
-        console.log(`[Checkout] TourDate record not found, creating for ${tourId} on ${date}`);
-        tourDate = await createTourDate({
-          tourId,
-          date,
-          date_type: 'default',
-          total_slots: 35
-        });
-      } else {
-        tourDate = secondCheck;
-      }
+      console.warn(`[Checkout] Date ${date} is not open for tour ${tourId}`);
+      return NextResponse.json({ 
+        error: 'Sorry, this tour is not available on the selected date.' 
+      }, { status: 400 });
     }
 
-
-    const availableSlots = await calculateAvailableSlots(tourId, date, false);
+    const { available: availableSlots, exists } = await calculateAvailableSlots(tourId, date, time || undefined, false);
     const requestedSlots = adults + children;
     
-    console.log(`[Checkout] Availability check: Requested ${requestedSlots}, Available ${availableSlots}`);
+    console.log(`[Checkout] Availability check: Requested ${requestedSlots}, Available ${availableSlots}, Exists ${exists}`);
+
+    if (!exists) {
+      // This should ideally not happen if getTourDate passed, but for safety:
+      return NextResponse.json({ 
+        error: 'Sorry, this tour is not available on the selected date.' 
+      }, { status: 400 });
+    }
+
 
     if (availableSlots < requestedSlots) {
       console.warn(`[Checkout] Not enough slots: Requested ${requestedSlots}, Available ${availableSlots}`);
@@ -103,21 +97,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid Amount' }, { status: 400 });
     }
 
-    // 5. Flow Decision Logic - NO CACHE
-    // default date + first booking + < 6 adults -> Awaiting confirmation
-    // otherwise -> Payment
-    let flow: 'payment' | 'awaiting' = 'payment';
-    
-    if (tourDate?.date_type === 'default') {
-      const existingOrders = await getOrdersByTourAndDate(tourId, date, false);
-      const isFirstBooking = existingOrders.length === 0;
-      
-      console.log(`[Checkout] Decision: isFirstBooking=${isFirstBooking}, adults=${adults}`);
-
-      if (isFirstBooking && adults < 6) {
-        flow = 'awaiting';
-      }
-    }
+    // 5. Flow Decision Logic
+    // Once the user reaches Step 4, the selected payment method should
+    // determine the next step directly. Do not auto-fallback to awaiting confirmation.
+    const flow: 'payment' | 'qr_bank' = paymentMethod === 'qr_bank' ? 'qr_bank' : 'payment';
 
     console.log(`[Checkout] Final Flow: ${flow.toUpperCase()}`);
 
@@ -154,7 +137,7 @@ export async function POST(request: NextRequest) {
       Children: children,
       Infants: infants,
       Amount: amount.toString(),
-      PaymentStatus: flow === 'payment' ? 'Pending' : 'Awaiting Confirmation',
+      PaymentStatus: flow === 'payment' ? 'Pending' : 'QR Pending',
       booking_status: 'awaiting_confirmation', // Always starts here
       payment_status: 'pending',
       OnePayRef: '',
@@ -165,31 +148,8 @@ export async function POST(request: NextRequest) {
       DepartureTime: time
     });
 
-    if (flow === 'awaiting') {
-      // Send Awaiting Confirmation Email
-      try {
-        const adminEmail = process.env.ADMIN_EMAIL || 'info@saigonriverstar.com';
-        await resend.emails.send({
-          from: process.env.FROM_EMAIL || 'onboarding@resend.dev',
-          to: [customerEmail, adminEmail],
-          subject: `Booking Request Received - ${orderId}`,
-          react: AwaitingConfirmation({
-            orderId,
-            tourName: tour.name,
-            tourSubtitle: tour.subtitle,
-            travelDate: date,
-            returnDate,
-            departureTime: time,
-            guestCountsStr: `${adults} Adults, ${children} Children, ${infants} Infants`,
-            amount: amount.toString(),
-          }),
-        });
-      } catch (emailError) {
-        console.error('Email sending error (Awaiting Confirmation):', emailError);
-        // Don't fail the whole request if email fails
-      }
-
-      return NextResponse.json({ awaitingConfirmation: true, orderId });
+    if (flow === 'qr_bank') {
+      return NextResponse.json({ qrPayment: true, orderId });
     }
 
     // 9. Payment Flow - OnePay
@@ -243,4 +203,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `Internal Server Error: ${errorMessage}` }, { status: 500 });
   }
 }
-

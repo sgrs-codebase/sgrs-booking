@@ -35,6 +35,7 @@ export interface TourDateRecord {
   id?: string;
   tourId: string;
   date: string;
+  departure_time?: string;
   date_type: 'pre-set' | 'default';
   total_slots: number;
 }
@@ -195,15 +196,19 @@ export async function getOrderFromAirtable(orderId: string): Promise<OrderRecord
 // TOUR DATES
 // ==========================================
 
-export async function getTourDate(tourId: string, date: string, useCache = true): Promise<TourDateRecord | null> {
+export async function getTourDate(tourId: string, date: string, time?: string, useCache = true): Promise<TourDateRecord | null> {
   try {
     // Use DATETIME_FORMAT to ensure robust date comparison in Airtable
-    const records = await airtableSafe(`tour-date-${tourId}-${date}`, () => base('TourDates').select({
-      filterByFormula: `AND({tourId} = '${tourId}', IS_SAME({date}, '${date}', 'day'))`,
+    let formula = `AND({tourId} = '${tourId}', IS_SAME({date}, '${date}', 'day'))`;
+    
+    if (time) {
+      formula = `AND({tourId} = '${tourId}', IS_SAME({date}, '${date}', 'day'), {departure_time} = '${time}')`;
+    }
+
+    const records = await airtableSafe(`tour-date-${tourId}-${date}-${time || 'any'}`, () => base('TourDates').select({
+      filterByFormula: formula,
       maxRecords: 1
     }).firstPage(), 3, useCache);
-
-
 
     if (records.length === 0) return null;
 
@@ -212,6 +217,7 @@ export async function getTourDate(tourId: string, date: string, useCache = true)
       id: record.id,
       tourId: record.get('tourId') as string,
       date: record.get('date') as string,
+      departure_time: record.get('departure_time') as string,
       date_type: record.get('date_type') as 'pre-set' | 'default',
       total_slots: Number(record.get('total_slots') || 35),
     };
@@ -292,19 +298,33 @@ export async function getOrdersByEmailAndDate(email: string, date: string, useCa
   }
 }
 
-export async function getOrdersByTourAndDate(tourId: string, date: string, useCache = true): Promise<OrderRecord[]> {
+export async function getOrdersByTourAndDate(tourId: string, date: string, time?: string, useCache = true): Promise<OrderRecord[]> {
   try {
     const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
 
-    const records = await airtableSafe(`orders-${tourId}-${date}`, () => base('Orders').select({
-      filterByFormula: `AND(
+    let formula = `AND(
         {TourID} = '${tourId}', 
         IS_SAME({TravelDate}, '${date}', 'day'),
         OR(
           {payment_status} = 'paid',
           AND({payment_status} = 'pending', IS_AFTER({created_at}, '${thirtyMinutesAgo}'))
         )
-      )`
+      )`;
+
+    if (time) {
+      formula = `AND(
+        {TourID} = '${tourId}', 
+        IS_SAME({TravelDate}, '${date}', 'day'),
+        {DepartureTime} = '${time}',
+        OR(
+          {payment_status} = 'paid',
+          AND({payment_status} = 'pending', IS_AFTER({created_at}, '${thirtyMinutesAgo}'))
+        )
+      )`;
+    }
+
+    const records = await airtableSafe(`orders-${tourId}-${date}-${time || 'any'}`, () => base('Orders').select({
+      filterByFormula: formula
     }).all(), 3, useCache);
 
 
@@ -336,18 +356,51 @@ export async function getOrdersByTourAndDate(tourId: string, date: string, useCa
   }
 }
 
-export async function calculateAvailableSlots(tourId: string, date: string, useCache = true): Promise<number> {
-  const tourDate = await getTourDate(tourId, date, useCache);
-  const totalSlots = tourDate ? tourDate.total_slots : 35; // Default 35
-
-  const orders = await getOrdersByTourAndDate(tourId, date, useCache);
-
+export async function calculateAvailableSlots(tourId: string, date: string, time?: string, useCache = true): Promise<{ total: number, available: number, exists: boolean }> {
+  const tourDate = await getTourDate(tourId, date, time, useCache);
   
+  if (!tourDate) {
+    return { total: 0, available: 0, exists: false };
+  }
+
+  const totalSlots = tourDate.total_slots;
+  const orders = await getOrdersByTourAndDate(tourId, date, time, useCache);
+
   const bookedSlots = orders.reduce((sum, order) => {
     return sum + (order.Adults || 0) + (order.Children || 0);
   }, 0);
 
-  return Math.max(0, totalSlots - bookedSlots);
+  return {
+    total: totalSlots,
+    available: Math.max(0, totalSlots - bookedSlots),
+    exists: true
+  };
+}
+
+export async function getOpenTourDates(tourId: string): Promise<TourDateRecord[]> {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().split('T')[0];
+
+    const records = await airtableSafe(`open-dates-${tourId}`, () => base('TourDates').select({
+      filterByFormula: `AND({tourId} = '${tourId}', OR(IS_SAME({date}, '${todayStr}', 'day'), IS_AFTER({date}, '${todayStr}')))`,
+      sort: [{ field: 'date', direction: 'asc' }]
+    }).all(), 3, true);
+
+    return records.map(record => ({
+      id: record.id,
+      tourId: record.get('tourId') as string,
+      // Normalize Airtable date values so client-side calendar keys match YYYY-MM-DD exactly.
+      date: String(record.get('date') || '').split('T')[0],
+      departure_time: record.get('departure_time') as string,
+      date_type: record.get('date_type') as 'pre-set' | 'default',
+      total_slots: Number(record.get('total_slots') || 35),
+    }));
+  } catch (error) {
+    console.error('Airtable Get Open Dates Error:', error);
+    return [];
+  }
 }
 
 

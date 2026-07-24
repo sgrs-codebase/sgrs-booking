@@ -28,34 +28,33 @@ export default function BookingSteps({
   };
 
   return (
-    <div className="booking-steps-container">
-      <div className="step-indicator">
-        {steps.map((step) => {
-          const status = getStepStatus(step.id);
-          const isClickable = step.id < currentStep;
-          
-          // Determine dynamic value for the step
-          let stepValue = step.subLabel;
-          if (step.id === 1 && selectedDate) {
-            stepValue = selectedDate;
-          } else if (step.id === 2 && guestCount) {
-            stepValue = `${guestCount} Guest${guestCount > 1 ? 's' : ''}`;
-          }
+    <div className="booking-steps">
+      {steps.map((step) => {
+        const status = getStepStatus(step.id);
+        const isClickable = step.id < currentStep;
+        
+        // Determine dynamic value for the step
+        let stepValue = step.subLabel;
+        if (step.id === 1 && selectedDate) {
+          stepValue = selectedDate;
+        } else if (step.id === 2 && guestCount) {
+          stepValue = `${guestCount} Guest${guestCount > 1 ? 's' : ''}`;
+        }
 
-          return (
-            <div 
-              key={step.id}
-              className={`step-indicator__item step-indicator__item--${status} ${isClickable ? 'step-indicator__item--clickable' : ''}`}
-              onClick={() => isClickable && onStepClick?.(step.id)}
-            >
-              <span className="step-indicator__label">{step.label}</span>
-              {stepValue && (
-                <span className="step-indicator__sublabel">{stepValue}</span>
-              )}
-            </div>
-          );
-        })}
-      </div>
+        return (
+          <div 
+            key={step.id}
+            className={`booking-steps__step ${status === 'inactive' ? 'booking-steps__step--inactive' : ''} ${isClickable ? 'booking-steps__step--clickable' : ''}`}
+            onClick={() => isClickable && onStepClick?.(step.id)}
+          >
+            <div className="booking-steps__line" />
+            <span className="booking-steps__label">
+              {step.label}
+              {stepValue && <span className="booking-steps__sublabel"> ({stepValue})</span>}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }

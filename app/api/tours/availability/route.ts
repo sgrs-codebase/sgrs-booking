@@ -6,17 +6,29 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const tourId = searchParams.get('tourId');
     const date = searchParams.get('date');
+    const time = searchParams.get('time');
 
     if (!tourId || !date) {
       return NextResponse.json({ error: 'Missing tourId or date' }, { status: 400 });
     }
 
     // Fetch total slots configuration
-    const tourDate = await getTourDate(tourId, date, false);
-    const totalSlots = tourDate ? tourDate.total_slots : 35;
+    const tourDate = await getTourDate(tourId, date, time || undefined, false);
+    
+    if (!tourDate) {
+      return NextResponse.json({ 
+        isOpen: false,
+        totalSlots: 0,
+        paidSlots: 0,
+        pendingSlots: 0,
+        availableSlots: 0
+      });
+    }
 
-    // Fetch existing orders for the date
-    const orders = await getOrdersByTourAndDate(tourId, date, false);
+    const totalSlots = tourDate.total_slots;
+
+    // Fetch existing orders for the date and time
+    const orders = await getOrdersByTourAndDate(tourId, date, time || undefined, false);
 
     let paidSlots = 0;
     let pendingSlots = 0;
@@ -33,6 +45,7 @@ export async function GET(request: NextRequest) {
     const availableSlots = Math.max(0, totalSlots - (paidSlots + pendingSlots));
 
     return NextResponse.json({
+      isOpen: true,
       totalSlots,
       paidSlots,
       pendingSlots,

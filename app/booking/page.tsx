@@ -145,6 +145,8 @@ function BookingContent() {
         window.location.href = result.paymentUrl;
       } else if (result.awaitingConfirmation) {
         window.location.href = `/booking/success?orderId=${result.orderId}`;
+      } else if (result.qrPayment) {
+        window.location.href = `/booking/qr-payment?orderId=${result.orderId}`;
       } else {
         setIsSubmitting(false);
         throw new Error('No redirection information received from server');
@@ -221,20 +223,21 @@ function BookingContent() {
               onSubmit={handleFormSubmit}
               onStepChange={setCurrentStep}
               onPriceChange={setTotalPrice}
+              isSubmitting={isSubmitting}
             />
           </main>
         </div>
       </div>
 
       {/* TripTotal positioned using JS calculation */}
-      {(currentStep === 2 || currentStep === 3) && (
+      {(currentStep === 2 || currentStep === 3 || currentStep === 4) && (
         <div style={tripTotalStyle}>
           <TripTotal
             totalPrice={totalPrice}
             onContinue={handleContinue}
-            showContinue={true}
+            showContinue={currentStep !== 4}
             isLoading={isSubmitting}
-            isLastStep={currentStep === 3}
+            isLastStep={currentStep === 4}
           />
         </div>
       )}

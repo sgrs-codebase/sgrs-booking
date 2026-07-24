@@ -401,7 +401,7 @@
 .date-time-section {
   @include flex-column;
   gap: $spacing-xl;
-  align-items: flex-end;
+  align-items: stretch;
   width: 100%;
 
   &__picker {
@@ -438,13 +438,18 @@
       display: flex;
       flex-direction: row;
       align-items: center;
-      justify-content: flex-start;
+      justify-content: space-between;
       border: 2px solid $color-red-brown;
       border-radius: 999px;
-      height: 72px;
-      padding: 0 20px;
-      background-color: $color-white;
-      gap: 0;
+      height: 56px;
+      padding: 0 10px 0 20px;
+      background-color: transparent;
+      gap: 14px;
+      transition: border-color $transition-fast, box-shadow $transition-fast;
+
+      &:hover {
+        border-color: rgba($color-red-brown, 0.85);
+      }
 
       input {
         flex: 1;
@@ -465,6 +470,30 @@
         }
       }
     }
+  }
+
+  &__display-value {
+    min-width: 0;
+    flex: 0 1 43%;
+    @include font-primary($font-weight-medium);
+    font-size: 18px;
+    color: $color-red-brown;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-left: 52px;
+  }
+
+  &__departure-display {
+    @include font-primary($font-weight-medium);
+    font-size: 18px;
+    color: $color-red-brown;
+    line-height: 1;
+    white-space: nowrap;
+    flex: 0 1 29%;
+    flex-shrink: 0;
+    text-align: center;
   }
 
   // Time wrapper inside combined input
@@ -522,24 +551,475 @@
 
   &__icon {
     position: static;
-    width: 48px;
-    height: 48px;
+    width: 42px;
+    height: 42px;
     @include flex-center;
     pointer-events: none;
     flex-shrink: 0;
     margin-left: auto;
 
-    .icon-container {
-      @include flex-center;
-      background-color: $color-grey;
-      border-radius: 999px;
-      padding: $spacing-sm;
+    background-color: #E8EAED;
+    border-radius: 999px;
 
-      svg,
-      img {
-        width: 24px;
-        height: 24px;
+    svg,
+    img {
+      width: 19px;
+      height: 19px;
+      color: $color-red-brown;
+    }
+  }
+
+  &__footer {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    width: 100%;
+    padding-top: 18px;
+  }
+
+  &__contact-block {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  &__contact-note {
+    @include font-primary($font-weight-medium);
+    font-size: 14px;
+    line-height: 1.25;
+    color: $color-red-brown;
+    font-style: italic;
+    max-width: none;
+  }
+
+  &__contact-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  &__contact-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 24px;
+    padding: 0 13px;
+    border-radius: 999px;
+    border: 1px solid rgba($color-red-brown, 0.8);
+    background-color: $color-white;
+    @include font-primary($font-weight-medium);
+    font-size: 11px;
+    color: $color-red-brown;
+    text-decoration: none;
+    transition: background-color $transition-fast;
+
+    &:hover {
+      background-color: rgba($color-red-brown, 0.05);
+    }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    align-self: flex-end;
+    flex-shrink: 0;
+    min-width: 156px;
+    padding-top: 18px;
+  }
+
+  @media (max-width: 768px) {
+    &__input-wrapper--combined {
+      padding-left: 14px;
+      padding-right: 8px;
+      gap: 10px;
+      height: 52px;
+    }
+
+    &__display-value {
+      font-size: 14px;
+      padding-left: 12px;
+      flex: 1; // Allow taking more space
+      min-width: 0;
+    }
+
+    &__departure-display {
+      font-size: 13px;
+      flex: 0 0 auto;
+      padding-left: 10px;
+      padding-right: 5px;
+      border-left: 1px solid rgba($color-red-brown, 0.15);
+    }
+
+    &__time-wrapper {
+      padding-left: 8px;
+      margin-right: 4px;
+      border-left: 1px solid rgba($color-red-brown, 0.15);
+    }
+
+    &__icon {
+      width: 34px;
+      height: 34px;
+
+      svg, img {
+        width: 15px;
+        height: 15px;
       }
+    }
+
+    &__footer {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 16px;
+      padding-top: 14px;
+    }
+
+    &__contact-note {
+      font-size: 13px;
+    }
+
+    &__actions {
+      width: 100%;
+      min-width: 0;
+      padding-top: 4px;
+
+      .btn-primary {
+        width: 100%;
+        height: 44px;
+      }
+    }
+  }
+}
+
+.date-picker-modal-v2 {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: $z-index-modal;
+  width: min(92vw, 812px);
+  min-height: 400px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.58fr) minmax(250px, 0.62fr);
+  background-color: $color-white;
+  border-radius: 32px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+
+  &__left {
+    padding: 38px 32px 28px 32px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__right {
+    position: relative;
+    border-left: 1px solid rgba($color-red-brown, 0.12);
+    padding: 32px 24px 28px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-lg;
+    margin-bottom: 20px;
+  }
+
+  &__month-display {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    color: $color-red-brown;
+
+    .month,
+    .year {
+      @include font-primary($font-weight-bold);
+      font-size: 18px;
+      line-height: 1;
+    }
+  }
+
+  &__month-nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    button {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: transparent;
+      @include flex-center;
+      transition: background-color $transition-fast;
+
+      &:hover {
+        background-color: rgba($color-red-brown, 0.06);
+      }
+    }
+  }
+
+  &__calendar-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__weekdays,
+  &__week {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    align-items: center;
+  }
+
+  &__weekdays {
+    margin-bottom: 6px;
+
+    > div {
+      @include flex-center;
+      @include font-primary($font-weight-bold);
+      font-size: 12px;
+      color: rgba($color-red-brown, 0.88);
+      min-height: 28px;
+    }
+  }
+
+  &__week {
+    min-height: 44px;
+  }
+
+  &__day {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+
+    button {
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      background: transparent;
+      @include flex-center;
+      @include font-primary($font-weight-medium);
+      font-size: 16px;
+      color: rgba($color-red-brown, 0.45);
+      transition: background-color $transition-fast, color $transition-fast, transform $transition-fast;
+
+      &:disabled {
+        cursor: default;
+      }
+    }
+
+    &.empty {
+      visibility: hidden;
+    }
+
+    &.has-tour button {
+      color: rgba($color-red-brown, 0.82);
+      background-color: #F3E6CC;
+    }
+
+    &.has-tour button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      background-color: #E8D7B4;
+    }
+
+    &.is-selected button,
+    &.is-start button,
+    &.is-end button {
+      background-color: $color-red-brown;
+      color: $color-white;
+    }
+
+    &.is-past button,
+    &:not(.has-tour) button {
+      color: rgba($color-red-brown, 0.34);
+      background-color: transparent;
+    }
+  }
+
+  &__contact-section {
+    margin-top: auto;
+    padding-top: 16px;
+
+    p {
+      @include font-primary($font-weight-medium);
+      font-size: 12px;
+      line-height: 1.25;
+      color: rgba($color-red-brown, 0.85);
+      font-style: italic;
+      max-width: 340px;
+      margin-bottom: 10px;
+    }
+  }
+
+  &__contact-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  &__timezone {
+    margin-top: 16px;
+    @include font-primary($font-weight-medium);
+    font-size: 12px;
+    color: rgba($color-red-brown, 0.72);
+  }
+
+  &__close-x {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    @include flex-center;
+    background: transparent;
+    color: rgba($color-red-brown, 0.78);
+    transition: background-color $transition-fast;
+
+    &:hover {
+      background-color: rgba($color-red-brown, 0.06);
+    }
+  }
+
+  &__selection-info {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding-top: 4px;
+  }
+
+  &__selected-day-large {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    color: $color-red-brown;
+    margin-bottom: 22px;
+
+    .day-name,
+    .day-num {
+      @include font-primary($font-weight-bold);
+      font-size: 18px;
+      line-height: 1;
+    }
+  }
+
+  &__loading {
+    @include font-primary($font-weight-medium);
+    font-size: 13px;
+    color: rgba($color-red-brown, 0.65);
+  }
+
+  &__time-slots {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  &__time-slot-card {
+    border-radius: 6px;
+    border: 1px solid rgba($color-red-brown, 0.1);
+    background-color: #F6F0E8;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: transform $transition-fast, background-color $transition-fast, color $transition-fast;
+
+    .time {
+      @include font-primary($font-weight-bold);
+      font-size: 18px;
+      line-height: 1;
+      color: $color-red-brown;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .slots {
+      @include font-primary($font-weight-medium);
+      font-size: 12px;
+      line-height: 1;
+      color: rgba($color-red-brown, 0.82);
+      text-align: center;
+    }
+
+    &:hover {
+      transform: translateY(-1px);
+    }
+
+    &--selected {
+      background-color: $color-red-brown;
+      border-color: $color-red-brown;
+
+      .time,
+      .slots {
+        color: $color-white;
+      }
+    }
+  }
+
+  &__continue {
+    align-self: center;
+    min-width: 144px;
+    height: 30px;
+    padding: 0 28px;
+    margin-top: auto;
+    font-size: 14px;
+  }
+
+  .contact-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 22px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid rgba($color-red-brown, 0.38);
+    background: transparent;
+    @include font-primary($font-weight-medium);
+    font-size: 11px;
+    color: rgba($color-red-brown, 0.82);
+    text-decoration: none;
+    transition: background-color $transition-fast;
+
+    &:hover {
+      background-color: rgba($color-red-brown, 0.05);
+    }
+  }
+
+  @media (max-width: 860px) {
+    top: 24px;
+    transform: translateX(-50%);
+    width: min(94vw, 620px);
+    min-height: auto;
+    grid-template-columns: 1fr;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+
+    &__left {
+      padding: 28px 22px 22px;
+    }
+
+    &__right {
+      border-left: 0;
+      border-top: 1px solid rgba($color-red-brown, 0.12);
+      padding: 20px 22px 24px;
+    }
+
+    &__contact-section {
+      margin-top: 20px;
+    }
+
+    &__continue {
+      width: 100%;
+      max-width: 240px;
+      height: 36px;
+      margin-top: 24px; // Add gap between slots and continue button on mobile
     }
   }
 }
@@ -1117,5 +1597,281 @@
   &:hover {
     background-color: $color-red-brown;
     color: $color-white;
+  }
+}
+
+.payment-method-section {
+  @include flex-column;
+  gap: 14px;
+  width: 100%;
+
+  &__label {
+    @include text-subheading;
+  }
+
+  &__options {
+    @include flex-column;
+    gap: 14px;
+    width: 100%;
+  }
+
+  &__onepay-action {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 4px;
+  }
+}
+
+.payment-method-card {
+  width: 100%;
+  min-height: 62px;
+  padding: 14px 54px;
+  border: 2px solid $color-red-brown;
+  border-radius: 999px;
+  background-color: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color $transition-fast, border-color $transition-fast, box-shadow $transition-fast;
+
+  &:hover {
+    background-color: rgba($color-red-brown, 0.03);
+  }
+
+  &--selected {
+    background-color: rgba($color-red-brown, 0.05);
+    box-shadow: inset 0 0 0 1px rgba($color-red-brown, 0.08);
+  }
+
+  &--loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  &__info {
+    @include flex-column;
+    gap: 4px;
+  }
+
+  &__name {
+    @include font-primary($font-weight-bold);
+    font-size: 18px;
+    line-height: 1.05;
+    color: $color-red-brown;
+  }
+
+  &__desc {
+    @include font-primary($font-weight-medium);
+    font-size: 11px;
+    line-height: 1.1;
+    color: $color-red-brown;
+  }
+
+  @media (max-width: 768px) {
+    min-height: 56px;
+    padding: 12px 20px;
+    border-radius: 26px;
+
+    &__name {
+      font-size: 16px;
+    }
+
+    &__desc {
+      font-size: 10px;
+    }
+  }
+}
+
+.payment-bank-panel {
+  width: 100%;
+  border: 2px solid $color-red-brown;
+  border-radius: 34px;
+  background-color: transparent;
+  padding: 18px 20px 24px;
+
+  &__content {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 28px;
+  }
+
+  &__details {
+    flex: 1 1 58%;
+    @include flex-column;
+  }
+
+  &__title {
+    @include font-primary($font-weight-bold);
+    font-size: 18px;
+    line-height: 1.1;
+    color: $color-red-brown;
+    margin-bottom: 18px;
+  }
+
+  &__meta {
+    @include flex-column;
+    gap: 18px;
+  }
+
+  &__meta-block {
+    @include flex-column;
+    gap: 2px;
+
+    .label {
+      @include font-primary($font-weight-medium);
+      font-size: 14px;
+      line-height: 1.1;
+      color: $color-red-brown;
+    }
+
+    .value-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .value {
+      @include font-primary($font-weight-medium);
+      font-size: 18px;
+      line-height: 1.1;
+      color: $color-red-brown;
+      word-break: break-word;
+
+      &.merchant {
+        max-width: 420px;
+      }
+    }
+
+    .copy-btn {
+      min-width: 78px;
+      height: 30px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 1px solid $color-red-brown;
+      background-color: transparent;
+      @include font-primary($font-weight-medium);
+      font-size: 12px;
+      color: $color-red-brown;
+      transition: background-color $transition-fast, color $transition-fast;
+
+      &:hover {
+        background-color: rgba($color-red-brown, 0.05);
+      }
+    }
+  }
+
+  &__qr {
+    flex: 0 0 26%;
+    @include flex-column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__qr-title {
+    @include font-primary($font-weight-bold);
+    font-size: 15px;
+    line-height: 1.15;
+    color: $color-red-brown;
+    text-align: center;
+    max-width: 210px;
+  }
+
+  &__qr-card {
+    width: 100%;
+    max-width: 190px;
+    border-radius: 16px;
+    background-color: $color-white;
+    padding: 6px;
+    @include flex-center;
+    flex-shrink: 1;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: auto;
+      max-height: 238px;
+      display: block;
+      object-fit: contain;
+      border-radius: 12px;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-top: auto;
+    padding-top: 28px;
+  }
+
+  &__confirm {
+    min-width: 178px;
+    height: 48px;
+    font-size: 16px;
+  }
+
+  &__download {
+    min-width: 320px;
+    height: 48px;
+    font-size: 16px;
+    background-color: $color-white;
+  }
+
+  @media (max-width: 900px) {
+    padding: 18px 18px 20px;
+    border-radius: 24px;
+
+    &__content {
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    &__title {
+      font-size: 16px;
+      margin-bottom: 14px;
+    }
+
+    &__meta {
+      gap: 14px;
+    }
+
+    &__meta-block {
+      .value {
+        font-size: 16px;
+      }
+    }
+
+    &__qr {
+      flex-basis: auto;
+      padding: 16px 0;
+      background-color: rgba($color-red-brown, 0.03);
+      border-radius: 20px;
+      width: 100%;
+    }
+
+    &__qr-title {
+      font-size: 14px;
+      max-width: 260px;
+    }
+
+    &__qr-card {
+      max-width: 180px;
+    }
+
+    &__actions {
+      flex-direction: column;
+      gap: 12px;
+      padding-top: 20px;
+    }
+
+    &__confirm,
+    &__download {
+      min-width: 0;
+      width: 100%;
+      height: 44px;
+      font-size: 15px;
+    }
   }
 }
