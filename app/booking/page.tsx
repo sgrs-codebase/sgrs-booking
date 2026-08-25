@@ -100,6 +100,7 @@ function BookingContent() {
       issuingAuthority: string;
       note?: string;
     }>;
+    hotelPickup?: string;
   }) => {
     if (!tour) return;
 

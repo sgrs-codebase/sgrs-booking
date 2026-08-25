@@ -19,6 +19,7 @@ export interface OrderRecord {
   PaymentStatus: string;
   OnePayRef: string;
   FullGuestDetails: string; // JSON string
+  HotelPickup?: string; // Pick-up address, or "NO TRANSFER SERVICE" when left blank
   TravelDate: string; // "YYYY-MM-DD"
   ReturnDate?: string; // "YYYY-MM-DD" (Optional)
   DepartureTime?: string; // "HH:mm" (Optional)
@@ -77,6 +78,7 @@ export async function saveOrderToAirtable(order: OrderRecord) {
       PaymentStatus: order.PaymentStatus,
       OnePayRef: order.OnePayRef,
       FullGuestDetails: order.FullGuestDetails,
+      HotelPickup: order.HotelPickup || 'NO TRANSFER SERVICE',
       TravelDate: order.TravelDate
     };
 
@@ -176,6 +178,7 @@ export async function getOrderFromAirtable(orderId: string): Promise<OrderRecord
       PaymentStatus: record.get('PaymentStatus') as string,
       OnePayRef: record.get('OnePayRef') as string,
       FullGuestDetails: record.get('FullGuestDetails') as string,
+      HotelPickup: record.get('HotelPickup') as string,
       TravelDate: record.get('TravelDate') as string,
       ReturnDate: record.get('ReturnDate') as string,
       DepartureTime: record.get('DepartureTime') as string,

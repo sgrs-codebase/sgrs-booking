@@ -501,6 +501,7 @@ interface BookingFormProps {
     children: number;
     infants: number;
     guests: GuestInfo[];
+    hotelPickup?: string;
     paymentMethod: 'onepay' | 'qr_bank';
   }) => void;
   currentStep: number;
@@ -558,6 +559,7 @@ export default function BookingForm({
   const [selectedReturnDate, setSelectedReturnDate] = useState('');
   const [selectedTime, setSelectedTime] = useState(startTimes && startTimes.length > 0 ? startTimes[0] : '08:00'); // Default time from Airtable if available
   const [paymentMethod, setPaymentMethod] = useState<'onepay' | 'qr_bank'>('onepay');
+  const [hotelPickup, setHotelPickup] = useState('');
   const [hasCopiedQrAmount, setHasCopiedQrAmount] = useState(false);
 
   const [availability, setAvailability] = useState<AvailabilityData | null>(null);
@@ -801,6 +803,7 @@ export default function BookingForm({
       children: tourType === 'overnight-tour' ? rooms.reduce((sum, r) => sum + r.children, 0) : children,
       infants: tourType === 'overnight-tour' ? rooms.reduce((sum, r) => sum + r.infants, 0) : infants,
       guests: guestsWithDefaults,
+      hotelPickup: hotelPickup.trim(),
       paymentMethod: selectedPaymentMethod,
     });
   };
@@ -1477,6 +1480,27 @@ export default function BookingForm({
               </div>
             </div>
           ))}
+
+          {/* Hotel Pick-up (optional, one per booking) */}
+          <div className="pickup-section">
+            <div className="pickup-section__header">
+              <label className="pickup-section__label" htmlFor="hotel-pickup">
+                Hotel Pick-up Address (optional)
+              </label>
+              <p className="pickup-section__note">
+                *Complimentary pick-up is available within a 3km radius of Bach Dang Wharf.
+                <br />
+                Surcharges apply for longer distances (our Sales Team will contact you for details).
+              </p>
+            </div>
+            <input
+              id="hotel-pickup"
+              type="text"
+              className="pickup-section__input"
+              value={hotelPickup}
+              onChange={(e) => setHotelPickup(e.target.value)}
+            />
+          </div>
         </div>
       )}
 
@@ -1516,7 +1540,7 @@ export default function BookingForm({
 
                       <div className="payment-bank-panel__actions">
                         <button type="submit" className="btn-primary payment-bank-panel__confirm">
-                          Confirm
+                          Submit
                         </button>
                         <button type="button" className="btn-secondary payment-bank-panel__download" onClick={handleDownloadQr}>
                           Download QR Code

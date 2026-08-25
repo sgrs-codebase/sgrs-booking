@@ -109,14 +109,13 @@ export async function GET(request: NextRequest) {
         travelDate: fullOrder?.TravelDate || travelDate,
         returnDate: fullOrder?.ReturnDate,
         departureTime: fullOrder?.DepartureTime,
+        hotelPickup: fullOrder?.HotelPickup,
         guestDetails: guestDetails,
         guestCountsStr: fullOrder?.Guests || guests,
         amount: params['vpc_Amount'] ? (parseInt(params['vpc_Amount']) / 100).toString() : '0',
         adultPrice: tour?.adultPrice || 0,
         childPrice: tour?.childPrice || 0,
         infantPrice: tour?.infantPrice || 0,
-        notices: tour?.notices,
-        forceMajeure: tour?.forceMajeure,
       }));
 
       const { data, error } = await resend.emails.send({

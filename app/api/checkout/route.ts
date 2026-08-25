@@ -12,7 +12,7 @@ import { buildPaymentUrl, OnePayParams } from '@/lib/onepay';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { tourId, adults: adultsRaw, children: childrenRaw, infants: infantsRaw, customerInfo, date, returnDate, time, guests, paymentMethod } = body;
+    const { tourId, adults: adultsRaw, children: childrenRaw, infants: infantsRaw, customerInfo, date, returnDate, time, guests, hotelPickup, paymentMethod } = body;
 
     const adults = Number(adultsRaw || 0);
     const children = Number(childrenRaw || 0);
@@ -143,6 +143,10 @@ export async function POST(request: NextRequest) {
       OnePayRef: '',
 
       FullGuestDetails: JSON.stringify(guests || []),
+      // Empty pick-up address means the guest arrives on their own
+      HotelPickup: typeof hotelPickup === 'string' && hotelPickup.trim()
+        ? hotelPickup.trim()
+        : 'NO TRANSFER SERVICE',
       TravelDate: date,
       ReturnDate: returnDate,
       DepartureTime: time

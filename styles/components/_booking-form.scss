@@ -1875,3 +1875,50 @@
     }
   }
 }
+
+// Hotel Pick-up Address (Step 3, one per booking)
+.pickup-section {
+  @include flex-column;
+  gap: $spacing-base;
+  width: 100%;
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $spacing-xl;
+    width: 100%;
+  }
+
+  &__label {
+    @include text-subheading;
+  }
+
+  &__note {
+    @include font-secondary($font-weight-regular, italic);
+    font-size: $font-size-sm;
+    line-height: $line-height-tight;
+    color: $color-red-brown;
+    text-align: right;
+    margin: 0;
+  }
+
+  &__input {
+    @include input-base;
+    border-width: 2px;
+    height: 56px;
+    padding: 0 20px;
+    font-size: $font-size-md;
+  }
+
+  @include respond-to(mobile) {
+    &__header {
+      flex-direction: column;
+      gap: $spacing-base;
+    }
+
+    &__note {
+      text-align: left;
+    }
+  }
+}

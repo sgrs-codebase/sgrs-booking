@@ -54,50 +54,83 @@ export default function RepayPage({ params: paramsPromise }: { params: Promise<{
   };
 
 
-  if (isLoading) return <div className="p-20 text-center">Loading order details...</div>;
-  if (error || !order) return <div className="p-20 text-center text-red-600">Error: {error || 'Order not found'}</div>;
+  if (isLoading) {
+    return (
+      <div className="pay-page">
+        <Navbar />
+        <div className="pay-page__status">
+          <span className="spinner"></span>
+          <span className="ml-3">Loading order details...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !order) {
+    return (
+      <div className="pay-page">
+        <Navbar />
+        <div className="pay-page__status pay-page__status--error">
+          <p>Error: {error || 'Order not found'}</p>
+          <button onClick={() => window.location.reload()} className="btn-primary">Try Again</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="pay-page">
       <Navbar />
-      <div className="max-w-2xl mx-auto py-12 px-4">
-        <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-100">
-          <h1 className="text-2xl font-bold text-[#56231E] mb-6">Complete Your Payment</h1>
+      <div className="pay-page__container">
+        <div className="pay-page__card">
+          <div className="pay-page__header">
+            <h1 className="pay-page__title">Complete Your Payment</h1>
+            <p className="pay-page__message">Please review your order details before proceeding to payment.</p>
+          </div>
           
-          <div className="space-y-4 mb-8">
-            <div className="flex justify-between pb-4 border-bottom border-gray-100">
-              <span className="text-gray-500">Order ID</span>
-              <span className="font-semibold">{order.OrderID}</span>
+          <div className="pay-page__details">
+            <div className="pay-page__detail-row">
+              <span className="label">Order ID</span>
+              <span className="value">{order.OrderID}</span>
             </div>
-            <div className="flex justify-between pb-4 border-bottom border-gray-100">
-              <span className="text-gray-500">Customer</span>
-              <span className="font-semibold">{order.CustomerName}</span>
+            <div className="pay-page__detail-row">
+              <span className="label">Customer</span>
+              <span className="value">{order.CustomerName}</span>
             </div>
-            <div className="flex justify-between pb-4 border-bottom border-gray-100">
-              <span className="text-gray-500">Tour</span>
-              <span className="font-semibold">{order.TourID}</span>
+            <div className="pay-page__detail-row">
+              <span className="label">Tour</span>
+              <span className="value">{order.TourID}</span>
             </div>
-            <div className="flex justify-between pb-4 border-bottom border-gray-100">
-              <span className="text-gray-500">Travel Date</span>
-              <span className="font-semibold">{order.TravelDate}</span>
+            <div className="pay-page__detail-row">
+              <span className="label">Travel Date</span>
+              <span className="value">{order.TravelDate}</span>
             </div>
-            <div className="flex justify-between pt-4 border-t border-gray-200">
-              <span className="text-lg font-bold">Total Amount</span>
-              <span className="text-lg font-bold text-[#56231E]">{formatPrice(order.Amount)} VND</span>
+            <div className="pay-page__detail-row pay-page__detail-row--total">
+              <span className="label">Total Amount</span>
+              <span className="value">{formatPrice(order.Amount)} VND</span>
             </div>
           </div>
 
-          <button
-            onClick={handlePay}
-            disabled={isProcessing}
-            className="w-full py-4 bg-[#56231E] text-white rounded-xl font-bold text-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-          >
-            {isProcessing ? 'Redirecting to OnePay...' : 'Pay Now'}
-          </button>
-          
-          <p className="mt-4 text-center text-sm text-gray-400">
-            Secure payment powered by OnePay
-          </p>
+          <div className="pay-page__actions">
+            <button
+              onClick={handlePay}
+              disabled={isProcessing}
+              className="pay-page__pay-button"
+            >
+              {isProcessing ? (
+                <>
+                  <span className="spinner spinner--white spinner--small"></span>
+                  <span>Redirecting to OnePay...</span>
+                </>
+              ) : (
+                'Pay Now'
+              )}
+            </button>
+            
+            <p className="pay-page__footer-note">
+              Secure payment powered by OnePay
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -448,6 +448,7 @@ export function sign(params: Record<string, string>, secret: string): string {
 | PaymentStatus     | Select    | "Pending" / "Paid" / "Failed"      |
 | OnePayRef         | Text      | OnePay transaction ID              |
 | FullGuestDetails  | Long Text | JSON array of guest info           |
+| HotelPickup       | Text      | Pick-up address, or "NO TRANSFER SERVICE" if blank |
 | TravelDate        | Date      | Departure date                     |
 | ReturnDate        | Date      | Return date (optional)             |
 | DepartureTime     | Text      | Departure time (e.g., "14:00")     |
