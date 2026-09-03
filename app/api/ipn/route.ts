@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verify } from '@/lib/onepay';
-import type { GuestDetail } from '@/components/emails/BookingReceipt';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -24,34 +23,16 @@ export async function GET(request: NextRequest) {
     // Payment Successful
 
     // Save to Airtable
-    let txnRef = '';
-    let customerName = 'Valued Customer';
-    let guests = params['vpc_OrderInfo'] || 'N/A';
-    let tourName = 'Saigon River Star Tour';
-    let travelDate = 'N/A';
+    const txnRef = params['vpc_MerchTxnRef'] || '';
 
     try {
-      const { updateOrderStatusAirtable, saveOrderToAirtable, getOrderFromAirtable } = await import('@/lib/airtable');
-
-      txnRef = params['vpc_MerchTxnRef'] || '';
+      const { updateOrderStatusAirtable, saveOrderToAirtable } = await import('@/lib/airtable');
 
       // Strategy: Try to update existing "Pending" order first
       // The update function now returns the Record object if successful, or false
       const updatedRecord = await updateOrderStatusAirtable(orderId, 'Paid', txnRef, 'confirmed');
 
-      if (updatedRecord) {
-        const orderData = await getOrderFromAirtable(orderId);
-
-
-        if (orderData) {
-          customerName = orderData.CustomerName;
-          guests = orderData.Guests;
-          tourName = orderData.TourID; // Ideally we fetch Tour Name from TourID, but ID is better than nothing
-          travelDate = orderData.ReturnDate
-            ? `${orderData.TravelDate} - ${orderData.ReturnDate}`
-            : orderData.TravelDate;
-        }
-      } else {
+      if (!updatedRecord) {
         // Fallback: If no pending order found (e.g., save failed earlier), create a new row
         // We have limited info here, but it's better than nothing.
         const orderInfo = params['vpc_OrderInfo'] || '';
@@ -82,55 +63,14 @@ export async function GET(request: NextRequest) {
       console.error('Failed to save/update Airtable:', dbError);
     }
 
-    // TODO: Phase 4 - Send Email via Resend
+    // Send the confirmation email (shared with the manual-confirmation webhook)
     try {
-      const { Resend } = await import('resend');
-      const { BookingReceipt } = await import('@/components/emails/BookingReceipt');
-      const { render } = await import('@react-email/render');
-      const { getToursFromAirtable, getOrderFromAirtable: getOrder } = await import('@/lib/airtable');
+      const { sendBookingConfirmedEmail } = await import('@/lib/email');
+      const paidAmount = params['vpc_Amount']
+        ? (parseInt(params['vpc_Amount']) / 100).toString()
+        : undefined;
 
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      const adminEmail = process.env.ADMIN_EMAIL || 'bookings@saigonriverstar.com'; // Fallback
-
-      // Fetch full order and tour data for the email
-      const fullOrder = await getOrder(orderId);
-      const tours = await getToursFromAirtable();
-      const tour = fullOrder ? tours.find(t => t.id === fullOrder.TourID) : null;
-
-      let guestDetails: GuestDetail[] = [];
-      try {
-        guestDetails = fullOrder ? JSON.parse(fullOrder.FullGuestDetails) : [];
-      } catch { /* empty */ }
-
-      const emailHtml = await render(BookingReceipt({
-        orderId: orderId,
-        tourName: tour?.name || tourName,
-        tourSubtitle: tour?.subtitle || '',
-        travelDate: fullOrder?.TravelDate || travelDate,
-        returnDate: fullOrder?.ReturnDate,
-        departureTime: fullOrder?.DepartureTime,
-        hotelPickup: fullOrder?.HotelPickup,
-        guestDetails: guestDetails,
-        guestCountsStr: fullOrder?.Guests || guests,
-        amount: params['vpc_Amount'] ? (parseInt(params['vpc_Amount']) / 100).toString() : '0',
-        adultPrice: tour?.adultPrice || 0,
-        childPrice: tour?.childPrice || 0,
-        infantPrice: tour?.infantPrice || 0,
-      }));
-
-      const { data, error } = await resend.emails.send({
-        from: process.env.FROM_EMAIL || 'onboarding@resend.dev',
-        to: fullOrder?.Email ? [adminEmail, fullOrder.Email] : [adminEmail],
-        subject: `Booking Confirmed - ${orderId}`,
-        html: emailHtml,
-      });
-
-      if (error) {
-        console.error('Resend Email Error:', error);
-      } else {
-        console.log('Email sent successfully:', data);
-      }
-
+      await sendBookingConfirmedEmail(orderId, paidAmount);
     } catch (emailError) {
       console.error('Failed to send email:', emailError);
     }

@@ -156,6 +156,38 @@ export async function updateOrderStatusAirtable(orderId: string, status: string,
   }
 }
 
+/**
+ * Records the outcome of SGRS manually checking a bank transfer.
+ * A rejected order stops occupying its slots (see occupiesSlotsFormula).
+ */
+export async function setOrderDecision(orderId: string, decision: 'confirm' | 'reject') {
+  try {
+    const records = await airtableSafe(null, () => base('Orders').select({
+      filterByFormula: `{OrderID} = '${orderId}'`,
+      maxRecords: 1
+    }).firstPage(), 3, false);
+
+    if (records.length === 0) {
+      console.warn(`[Decision] Order ${orderId} not found in Airtable`);
+      return false;
+    }
+
+    const fields = decision === 'confirm'
+      ? { PaymentStatus: 'Paid', payment_status: 'paid', booking_status: 'confirmed' }
+      : { PaymentStatus: 'Cancelled', payment_status: 'failed', booking_status: 'cancelled' };
+
+    await airtableSafe(null, () => base('Orders').update([
+      { id: records[0].id, fields }
+    ]));
+
+    console.log(`[Decision] Order ${orderId} marked as ${decision}`);
+    return true;
+  } catch (error) {
+    console.error('Airtable Set Decision Error:', error);
+    return false;
+  }
+}
+
 export async function getOrderFromAirtable(orderId: string): Promise<OrderRecord | null> {
   try {
     const records = await airtableSafe(`order-${orderId}`, () => base('Orders').select({
@@ -258,21 +290,54 @@ export async function createTourDate(tourDate: TourDateRecord): Promise<TourDate
   }
 }
 
+// ==========================================
+// SLOT HOLDING
+// ==========================================
+
+// A card (OnePay) order only holds its slots while the payment session is alive.
+export const CARD_HOLD_MINUTES = Number(process.env.CARD_SLOT_HOLD_MINUTES || 30);
+
+// A bank-transfer (QR) order is verified by hand, so it must keep its slots until
+// SGRS confirms or rejects it. This cap only exists so an abandoned order eventually
+// frees the seats on its own.
+export const QR_HOLD_HOURS = Number(process.env.QR_SLOT_HOLD_HOURS || 72);
+
+// Marker written by the checkout route for bank-transfer orders
+const QR_PAYMENT_STATUS = 'QR Pending';
+
+/**
+ * Airtable formula fragment for "this order currently occupies its slots":
+ * paid, or still within the hold window for its payment method.
+ * Orders rejected by SGRS become 'failed'/'cancelled' and drop out here.
+ */
+function occupiesSlotsFormula(): string {
+  const cardCutoff = new Date(Date.now() - CARD_HOLD_MINUTES * 60 * 1000).toISOString();
+  const qrCutoff = new Date(Date.now() - QR_HOLD_HOURS * 60 * 60 * 1000).toISOString();
+
+  return `OR(
+        {payment_status} = 'paid',
+        AND(
+          {payment_status} = 'pending',
+          {PaymentStatus} = '${QR_PAYMENT_STATUS}',
+          IS_AFTER({created_at}, '${qrCutoff}')
+        ),
+        AND(
+          {payment_status} = 'pending',
+          {PaymentStatus} != '${QR_PAYMENT_STATUS}',
+          IS_AFTER({created_at}, '${cardCutoff}')
+        )
+      )`;
+}
+
 export async function getOrdersByEmailAndDate(email: string, date: string, useCache = false): Promise<OrderRecord[]> {
   try {
-    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-    
-    // We search for orders with same email, same travel date, and either paid or pending (within 30 mins)
-    // Using created_at (Created Time) as per requirements
+    // Same email + same travel date, limited to orders that still hold their slots
     // Use IS_SAME for robust date comparison
     const records = await airtableSafe(null, () => base('Orders').select({
       filterByFormula: `AND(
         {Email} = '${email}', 
         IS_SAME({TravelDate}, '${date}', 'day'),
-        OR(
-          {payment_status} = 'paid',
-          AND({payment_status} = 'pending', IS_AFTER({created_at}, '${thirtyMinutesAgo}'))
-        )
+        ${occupiesSlotsFormula()}
       )`
     }).all(), 3, useCache);
 
@@ -303,15 +368,12 @@ export async function getOrdersByEmailAndDate(email: string, date: string, useCa
 
 export async function getOrdersByTourAndDate(tourId: string, date: string, time?: string, useCache = true): Promise<OrderRecord[]> {
   try {
-    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    const occupies = occupiesSlotsFormula();
 
     let formula = `AND(
         {TourID} = '${tourId}', 
         IS_SAME({TravelDate}, '${date}', 'day'),
-        OR(
-          {payment_status} = 'paid',
-          AND({payment_status} = 'pending', IS_AFTER({created_at}, '${thirtyMinutesAgo}'))
-        )
+        ${occupies}
       )`;
 
     if (time) {
@@ -319,10 +381,7 @@ export async function getOrdersByTourAndDate(tourId: string, date: string, time?
         {TourID} = '${tourId}', 
         IS_SAME({TravelDate}, '${date}', 'day'),
         {DepartureTime} = '${time}',
-        OR(
-          {payment_status} = 'paid',
-          AND({payment_status} = 'pending', IS_AFTER({created_at}, '${thirtyMinutesAgo}'))
-        )
+        ${occupies}
       )`;
     }
 

@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     if (duplicateOrders.length > 0) {
       console.warn(`[Checkout] Duplicate booking detected for ${customerInfo.email} on ${date}`);
       return NextResponse.json({ 
-        error: 'You already have a pending or paid booking for this date. Please check your email or wait 30 minutes to try again.' 
+        error: 'You already have a booking being processed or confirmed for this date. Please check your email, or contact our Sales team if you need to change it.'
       }, { status: 400 });
     }
 
@@ -153,6 +153,15 @@ export async function POST(request: NextRequest) {
     });
 
     if (flow === 'qr_bank') {
+      // The transfer is verified by hand, so tell the guest we received the request.
+      // A failed email must not fail the booking that was already saved.
+      try {
+        const { sendBookingReceivedEmail } = await import('@/lib/email');
+        await sendBookingReceivedEmail(orderId);
+      } catch (emailError) {
+        console.error('[Checkout] Failed to send Booking Received email:', emailError);
+      }
+
       return NextResponse.json({ qrPayment: true, orderId });
     }
 

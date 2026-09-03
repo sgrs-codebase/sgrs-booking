@@ -134,6 +134,19 @@ AIRTABLE_BASE_ID=<your_base_id>
 # ========================================
 RESEND_API_KEY=<your_resend_api_key>
 ADMIN_EMAIL=admin@saigonriverstar.com
+FROM_EMAIL=<verified_sender@your_domain>
+
+# ========================================
+# MANUAL BOOKING CONFIRMATION
+# ========================================
+# Secret cho POST /api/orders/<id>/decision (Airtable automation gọi vào)
+ADMIN_WEBHOOK_SECRET=<random_secret>
+
+# ========================================
+# SLOT HOLD
+# ========================================
+QR_SLOT_HOLD_HOURS=72
+CARD_SLOT_HOLD_MINUTES=30
 ```
 
 ### Cách Lấy Credentials
@@ -588,6 +601,50 @@ export async function updateOrderStatus(
 - ... (other vpc_* params)
 
 **Response:** Redirect to `/booking/success` hoặc `/booking/failed`
+
+### POST `/api/orders/{orderId}/decision`
+
+**Description:** Ghi nhận kết quả SGRS kiểm tra thủ công giao dịch chuyển khoản (QR).
+
+**Headers:**
+- `x-admin-secret`: giá trị của env `ADMIN_WEBHOOK_SECRET`
+
+**Request Body:**
+```json
+{ "action": "confirm" }
+```
+hoặc
+```json
+{ "action": "reject" }
+```
+
+| action | Airtable | Email |
+|---|---|---|
+| `confirm` | `PaymentStatus=Paid`, `payment_status=paid`, `booking_status=confirmed` | Gửi "Your Booking Is Confirmed" cho khách |
+| `reject` | `PaymentStatus=Cancelled`, `payment_status=failed`, `booking_status=cancelled` | Không gửi. Slot được nhả ngay |
+
+**Idempotent:** đơn đã ở trạng thái cuối sẽ trả `alreadyProcessed: true` và không gửi lại email,
+nên Airtable automation bắn trùng cũng an toàn.
+
+**Error Responses:**
+- `401`: Sai/thiếu `x-admin-secret`
+- `404`: Không tìm thấy order
+- `409`: Confirm một đơn đã bị cancel
+
+---
+
+## 8.1. Giữ Slot (Slot Hold)
+
+Một đơn chiếm chỗ khi `payment_status = paid`, hoặc còn trong thời hạn giữ chỗ:
+
+| Loại đơn | Nhận biết | Thời hạn giữ chỗ | Env |
+|---|---|---|---|
+| Thẻ quốc tế (OnePay) | `PaymentStatus != 'QR Pending'` | 30 phút kể từ `created_at` | `CARD_SLOT_HOLD_MINUTES` |
+| Chuyển khoản (QR) | `PaymentStatus = 'QR Pending'` | 72 giờ kể từ `created_at` | `QR_SLOT_HOLD_HOURS` |
+
+Đơn QR giữ chỗ lâu hơn vì cần SGRS đối soát thủ công. Khi SGRS `reject`, đơn chuyển sang
+`failed/cancelled` và nhả chỗ ngay, không cần chờ hết 72 giờ. Logic nằm ở
+`occupiesSlotsFormula()` trong `lib/airtable.ts`.
 
 ---
 
