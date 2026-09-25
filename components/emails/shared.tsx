@@ -326,6 +326,14 @@ export const styles = {
   section: {
     padding: '15px 0 20px',
   },
+  tourTag: {
+    fontFamily: FONT_PRIMARY,
+    fontWeight: 700 as const,
+    fontSize: '11px',
+    color: COLOR_PRIMARY,
+    lineHeight: '1.1',
+    margin: '0 0 6px',
+  },
   tourName: {
     fontFamily: FONT_PRIMARY,
     fontWeight: 500 as const,

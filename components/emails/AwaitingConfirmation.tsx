@@ -21,6 +21,7 @@ import {
   TotalSection,
   formatLongDate,
   formatTime12h,
+  getMeetingTime,
   styles,
   type GuestDetail,
 } from './shared';
@@ -28,6 +29,7 @@ import {
 interface AwaitingConfirmationProps {
   orderId: string;
   customerName?: string;
+  tourTag?: string;
   tourName: string;
   tourSubtitle: string;
   travelDate: string;
@@ -46,6 +48,7 @@ const PROCESSING_TIME = 'Usually 3-5 business days, depending on your bank.';
 export const AwaitingConfirmation = ({
   orderId,
   customerName,
+  tourTag,
   tourName,
   tourSubtitle,
   travelDate,
@@ -92,6 +95,7 @@ export const AwaitingConfirmation = ({
 
           {/* ── Tour Info ── */}
           <Section style={styles.section}>
+            {tourTag && <Text style={styles.tourTag}>{tourTag}</Text>}
             <Text style={styles.tourName}>{tourName}</Text>
             <Text style={styles.tourSubtitle}>{tourSubtitle}</Text>
           </Section>
@@ -104,8 +108,9 @@ export const AwaitingConfirmation = ({
             <DetailRow label="Departure date:">
               {formatLongDate(travelDate)}{returnDate ? ` - ${formatLongDate(returnDate)}` : ''}
             </DetailRow>
+            <DetailRow label="Meeting time:">{getMeetingTime(departureTime) || '-'}</DetailRow>
             <DetailRow label="Departure time:">{formatTime12h(departureTime) || '-'}</DetailRow>
-            <DetailRow label="Estimated Processing Time:">{PROCESSING_TIME}</DetailRow>
+            <DetailRow label="Estimated Processing Time">{PROCESSING_TIME}</DetailRow>
 
             <Text style={awaitingStyles.processingNote}>
               Once the payment status has been done, a confirmation email with the final details
@@ -138,7 +143,7 @@ export const AwaitingConfirmation = ({
               forward to welcoming you on board.
             </Text>
             <br />
-            <Text style={styles.footerText}>Warm regards,</Text>
+            <Text style={styles.footerText}>Best regards,</Text>
             <Text style={styles.footerText}><strong>Sai Gon River Star</strong></Text>
           </Section>
 

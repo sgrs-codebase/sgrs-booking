@@ -53,7 +53,9 @@ export interface TourRecord {
   adultPrice: number;
   childPrice: number;
   infantPrice: number;
+  tag?: string; // Optional small label above the tour name, e.g. "Speedboat Tour"
   includes: string[];
+  excludes: string[]; // Optional - the "Excluded" accordion is hidden when empty
   notes: string[];
   startTimes?: string[];
   notices?: string;
@@ -667,11 +669,15 @@ export async function getToursFromAirtable(): Promise<TourRecord[]> {
 
     const tours = records.map(record => {
       // Helper to get field value case-insensitively or with spaces
+      // List fields accept one item per line or items separated by "|"
+      const splitList = (raw: string) => raw.split(/[\n|]/).map(s => s.trim()).filter(Boolean);
+
       const getField = (name: string) => {
         return record.get(name) || record.get(name.charAt(0).toUpperCase() + name.slice(1)) || record.get(name.replace(/([A-Z])/g, ' $1').trim());
       };
 
       const includesRaw = (getField('includes') as string) || '';
+      const excludesRaw = (getField('excludes') as string) || '';
       const notesRaw = (getField('notes') as string) || '';
       const startTimesRaw = (getField('startTime') as string) || (getField('startTimes') as string) || '';
       const noticesRaw = (getField('notices') as string) || '';
@@ -695,11 +701,13 @@ export async function getToursFromAirtable(): Promise<TourRecord[]> {
         duration: getField('duration') as string,
         image: getField('image') as string,
         codeName: getField('codeName') as string,
+        tag: ((getField('tag') as string) || '').trim() || undefined,
         adultPrice: Number(getField('adultPrice') || 0),
         childPrice: Number(getField('childPrice') || 0),
         infantPrice: Number(getField('infantPrice') || 0),
-        includes: includesRaw.split('\n').map(s => s.trim()).filter(Boolean),
-        notes: notesRaw.split('\n').map(s => s.trim()).filter(Boolean),
+        includes: splitList(includesRaw),
+        excludes: splitList(excludesRaw),
+        notes: splitList(notesRaw),
         startTimes: startTimesRaw ? startTimesRaw.split(/[\n,]+/).map(s => s.trim()).filter(Boolean) : undefined,
         notices: noticesHTML || undefined,
         forceMajeure: forceMajeureHTML || undefined

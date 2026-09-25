@@ -75,6 +75,7 @@ export async function sendBookingReceivedEmail(orderId: string): Promise<boolean
     const html = await render(AwaitingConfirmation({
       orderId: order.OrderID,
       customerName: order.CustomerName,
+      tourTag: tour?.tag,
       tourName: tour?.name || order.TourID,
       tourSubtitle: tour?.subtitle || '',
       travelDate: order.TravelDate,
@@ -107,6 +108,7 @@ export async function sendBookingConfirmedEmail(orderId: string, amountOverride?
 
     const html = await render(BookingReceipt({
       orderId: order.OrderID,
+      tourTag: tour?.tag,
       tourName: tour?.name || order.TourID,
       tourSubtitle: tour?.subtitle || '',
       travelDate: order.TravelDate,

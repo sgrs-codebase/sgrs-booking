@@ -56,6 +56,13 @@
       color: $color-red-brown;
     }
     
+    &__tag {
+      @include font-primary($font-weight-bold);
+      font-size: $font-size-sm;
+      line-height: $line-height-tight;
+      margin-bottom: -$spacing-xs;
+    }
+
     &__title {
       @include font-secondary($font-weight-regular, italic);
       font-size: $font-size-xl;
@@ -124,6 +131,12 @@
       height: 18px;
       transition: transform $transition-base;
     }
+  }
+
+  &__icon-vertical {
+    transform-origin: center;
+    transform-box: fill-box;
+    transition: transform $transition-base;
   }
   
   &__divider {

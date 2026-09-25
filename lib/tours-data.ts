@@ -14,7 +14,9 @@ export interface Tour {
   adultPrice: number;
   childPrice: number;
   infantPrice: number;
+  tag?: string; // Optional small label above the tour name, e.g. "Speedboat Tour"
   includes: string[];
+  excludes: string[]; // Optional - the "Excluded" accordion is hidden when empty
   notes: string[];
   startTimes?: string[];
   notices?: string; // HTML or plain text for notices section

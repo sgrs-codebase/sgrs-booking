@@ -520,7 +520,7 @@ interface AvailabilityData {
 const BOOKING_STEPS = [
 
   { id: 1, label: 'Date & Time' },
-  { id: 2, label: 'Guests Amount' },
+  { id: 2, label: 'Guests Quantity' },
   { id: 3, label: 'Guest Info' },
   { id: 4, label: 'Payment' },
 ];

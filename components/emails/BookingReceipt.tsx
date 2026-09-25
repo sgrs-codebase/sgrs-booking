@@ -33,6 +33,7 @@ export type { GuestDetail };
 
 interface BookingReceiptProps {
   orderId: string;
+  tourTag?: string;
   tourName: string;
   tourSubtitle: string;
   travelDate: string;
@@ -49,6 +50,7 @@ interface BookingReceiptProps {
 
 export const BookingReceipt = ({
   orderId,
+  tourTag,
   tourName,
   tourSubtitle,
   travelDate,
@@ -96,6 +98,7 @@ export const BookingReceipt = ({
 
           {/* ── Tour Info ── */}
           <Section style={styles.section}>
+            {tourTag && <Text style={styles.tourTag}>{tourTag}</Text>}
             <Text style={styles.tourName}>{tourName}</Text>
             <Text style={styles.tourSubtitle}>{tourSubtitle}</Text>
           </Section>
@@ -105,10 +108,10 @@ export const BookingReceipt = ({
           {/* ── Details ── */}
           <Section style={styles.section}>
             <DetailRow label="Booking ID:">{orderId}</DetailRow>
-            <DetailRow label="Meeting time:">{getMeetingTime(departureTime) || '-'}</DetailRow>
             <DetailRow label="Departure date:">
               {formatLongDate(travelDate)}{returnDate ? ` - ${formatLongDate(returnDate)}` : ''}
             </DetailRow>
+            <DetailRow label="Meeting time:">{getMeetingTime(departureTime) || '-'}</DetailRow>
             <DetailRow label="Departure time:">{formatTime12h(departureTime) || '-'}</DetailRow>
             <DetailRow
               label="Pick-up address:"

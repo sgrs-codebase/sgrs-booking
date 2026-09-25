@@ -3,10 +3,18 @@
 import { useState } from 'react';
 import Image from 'next/image';
 
-// Icon SVG for accordion chevron
-const ChevronIcon = () => (
+// Accordion plus icon - the vertical stroke collapses when open, leaving a minus
+const PlusIcon = ({ isOpen }: { isOpen: boolean }) => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M4.5 6.75L9 11.25L13.5 6.75" stroke="#56231E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M1 9H17" stroke="#56231E" strokeWidth="1.2" strokeLinecap="round"/>
+    <path
+      className="accordion-item__icon-vertical"
+      d="M9 1V17"
+      stroke="#56231E"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      style={{ transform: isOpen ? 'scaleY(0)' : 'scaleY(1)' }}
+    />
   </svg>
 );
 
@@ -27,8 +35,8 @@ function AccordionItem({ title, children, defaultOpen = false }: AccordionItemPr
         aria-expanded={isOpen}
       >
         <span className="accordion-item__title">{title}</span>
-        <span className="accordion-item__icon" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-          <ChevronIcon />
+        <span className="accordion-item__icon">
+          <PlusIcon isOpen={isOpen} />
         </span>
       </button>
       <div className="accordion-item__divider" />
@@ -49,7 +57,9 @@ interface TourCardProps {
     type: string;
     duration: string;
     image: string;
+    tag?: string;
     includes: string[];
+    excludes?: string[];
     notes: string[];
   };
 }
@@ -70,6 +80,7 @@ export default function TourCard({ tour }: TourCardProps) {
         
         <div className="tour-card__info-container">
           <div className="tour-card__info">
+            {tour.tag && <span className="tour-card__tag">{tour.tag}</span>}
             <h2 className="tour-card__title">{tour.name}</h2>
             <p className="tour-card__subtitle">{tour.subtitle}</p>
           </div>
@@ -80,13 +91,23 @@ export default function TourCard({ tour }: TourCardProps) {
           </div>
           
           <div className="tour-card__accordion">
-            <AccordionItem title="Included in your cruise">
+            <AccordionItem title="Included">
               <ul>
                 {tour.includes.map((item, index) => (
                   <li key={index}>{item}</li>
                 ))}
               </ul>
             </AccordionItem>
+
+            {tour.excludes && tour.excludes.length > 0 && (
+              <AccordionItem title="Excluded">
+                <ul>
+                  {tour.excludes.map((item, index) => (
+                    <li key={index}>{item}</li>
+                  ))}
+                </ul>
+              </AccordionItem>
+            )}
             
             <AccordionItem title="Important Notes">
               <ul>
