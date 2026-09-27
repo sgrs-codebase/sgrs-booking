@@ -50,7 +50,7 @@ export const EMAIL_BASE_CSS = `
 
 // Thousands separated by commas, per the approved email design
 export const formatPrice = (price: string | number) => {
-  return Number(price).toLocaleString('en-US');
+  return Number(price).toLocaleString('vi-VN').replace(/,/g, '.');
 };
 
 // "2025-12-02" -> "02 December 2025"
