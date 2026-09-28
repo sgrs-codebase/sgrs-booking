@@ -67,6 +67,24 @@
     }
   }
   
+  // Narrow screens: let long labels ("Guests Quantity") wrap instead of overlapping
+  @media (max-width: 768px) {
+    height: auto;
+    align-items: flex-start;
+    gap: 12px;
+
+    &__step {
+      height: auto;
+      padding-top: 6px;
+    }
+
+    &__label {
+      position: static;
+      display: block;
+      white-space: normal;
+    }
+  }
+
   // Summary info shown above steps
   &__summary {
     display: flex;

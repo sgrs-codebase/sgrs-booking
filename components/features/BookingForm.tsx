@@ -651,8 +651,7 @@ export default function BookingForm({
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-GB', {
       day: '2-digit',
-      month: 'long',
-      year: 'numeric'
+      month: '2-digit'
     });
   };
 
@@ -1464,6 +1463,31 @@ export default function BookingForm({
                   </div>
                 </div>
 
+                {/* Hotel Pick-up (optional, one per booking - shown on the primary guest only) */}
+                {index === 0 && (
+                  <div className="guest-form__row">
+                    <div className="form-field form-field--full">
+                      <div className="pickup-section__header">
+                        <label className="form-field__label" htmlFor="hotel-pickup">
+                          Hotel Pick-up Address (optional)
+                        </label>
+                        <p className="pickup-section__note">
+                          *Complimentary pick-up is available within a 3km radius of Bach Dang Wharf.
+                          <br />
+                          Surcharges apply for longer distances (our Sales Team will contact you for details).
+                        </p>
+                      </div>
+                      <input
+                        id="hotel-pickup"
+                        type="text"
+                        className="form-field__input"
+                        value={hotelPickup}
+                        onChange={(e) => setHotelPickup(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {/* Row 7: Note */}
                 <div className="guest-form__row">
                   <div className="form-field form-field--full">
@@ -1481,26 +1505,6 @@ export default function BookingForm({
             </div>
           ))}
 
-          {/* Hotel Pick-up (optional, one per booking) */}
-          <div className="pickup-section">
-            <div className="pickup-section__header">
-              <label className="pickup-section__label" htmlFor="hotel-pickup">
-                Hotel Pick-up Address (optional)
-              </label>
-              <p className="pickup-section__note">
-                *Complimentary pick-up is available within a 3km radius of Bach Dang Wharf.
-                <br />
-                Surcharges apply for longer distances (our Sales Team will contact you for details).
-              </p>
-            </div>
-            <input
-              id="hotel-pickup"
-              type="text"
-              className="pickup-section__input"
-              value={hotelPickup}
-              onChange={(e) => setHotelPickup(e.target.value)}
-            />
-          </div>
         </div>
       )}
 
