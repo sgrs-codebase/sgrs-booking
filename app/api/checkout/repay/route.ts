@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getOrderFromAirtable, getToursFromAirtable } from '@/lib/airtable';
+import { getOrderFromAirtable } from '@/lib/airtable';
 import { buildPaymentUrl, OnePayParams } from '@/lib/onepay';
 
 export async function POST(request: NextRequest) {
@@ -21,12 +21,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Order already paid' }, { status: 400 });
     }
 
-    // 3. Fetch tour info to get the name for OrderInfo
-    const tours = await getToursFromAirtable();
-    const tour = tours.find(t => t.id === order.TourID);
-    const tourName = tour ? tour.name : 'Tour';
-
-    // 4. OnePay Config
+    // 3. OnePay Config
     const env = process.env || {};
     const merchant = env.ONEPAY_MERCHANT || '';
     const accessCode = env.ONEPAY_ACCESS_CODE || '';
@@ -37,22 +32,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Payment Gateway Configuration Error' }, { status: 500 });
     }
 
-    // 5. Sanitize and prepare params
-    const sanitize = (str: string) => {
-      try {
-        if (!str || typeof str !== 'string') return '';
-        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-          .replace(/[^a-zA-Z0-9\s-]/g, "")
-          .trim();
-      } catch (e) {
-        return 'SanitizedError';
-      }
-    };
-
     const amountInCents = (Number(order.Amount) * 100).toString();
-    const orderInfo = sanitize(`Payment for ${tourName} ${orderId}`)
-      .replace(/[^a-zA-Z0-9\s]/g, "")
-      .substring(0, 100);
+    // OnePay limits vpc_OrderInfo to 34 characters - the order ID is short and unique
+    const orderInfo = order.OrderID.substring(0, 34);
 
     const forwardedFor = request.headers.get('x-forwarded-for');
     const clientIp = forwardedFor ? forwardedFor.split(',')[0] : '127.0.0.1';
@@ -67,6 +49,7 @@ export async function POST(request: NextRequest) {
       vpc_Merchant: merchant,
       vpc_OrderInfo: orderInfo,
       vpc_ReturnURL: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/ipn`,
+      vpc_CallbackURL: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/callback`,
       vpc_Version: '2',
       vpc_TicketNo: clientIp,
       user_Customer_Email: order.Email,

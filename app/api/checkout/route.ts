@@ -108,19 +108,6 @@ export async function POST(request: NextRequest) {
     const orderId = await generateOrderId(tourId, date);
 
 
-    // 7. Sanitize Info
-    const sanitize = (str: string) => {
-      try {
-        if (!str || typeof str !== 'string') return '';
-        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
-          .replace(/[^a-zA-Z0-9\s-]/g, "") // Remove special chars except space and hyphen
-          .trim();
-      } catch (e) {
-        console.error('Sanitize error:', e);
-        return 'SanitizedError';
-      }
-    };
-
     const customerEmail = String(customerInfo.email).trim();
     const customerPhone = String(customerInfo.phone).replace(/\D/g, '');
 
@@ -180,10 +167,8 @@ export async function POST(request: NextRequest) {
     const forwardedFor = request.headers.get('x-forwarded-for');
     const clientIp = forwardedFor ? forwardedFor.split(',')[0] : '127.0.0.1';
 
-    const orderInfoSource = `Booking ${tour.name} ${customerEmail}`;
-    const orderInfo = sanitize(orderInfoSource)
-      .replace(/[^a-zA-Z0-9\s]/g, "")
-      .substring(0, 100);
+    // OnePay limits vpc_OrderInfo to 34 characters - the order ID is short and unique
+    const orderInfo = orderId.substring(0, 34);
 
     const params: OnePayParams = {
       vpc_AccessCode: accessCode,
@@ -195,6 +180,7 @@ export async function POST(request: NextRequest) {
       vpc_Merchant: merchant,
       vpc_OrderInfo: orderInfo,
       vpc_ReturnURL: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/ipn`,
+      vpc_CallbackURL: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/callback`,
       vpc_Version: '2',
       vpc_TicketNo: clientIp,
       user_Customer_Email: customerEmail,

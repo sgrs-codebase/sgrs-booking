@@ -122,10 +122,10 @@ export async function saveOrderToAirtable(order: OrderRecord) {
 export async function updateOrderStatusAirtable(orderId: string, status: string, onePayRef: string, bookingStatus?: string) {
   try {
     // 1. Find the record first
-    const records = await airtableSafe(`order-${orderId}`, () => base('Orders').select({
+    const records = await airtableSafe(null, () => base('Orders').select({
       filterByFormula: `{OrderID} = '${orderId}'`,
       maxRecords: 1
-    }).firstPage());
+    }).firstPage(), 3, false);
 
     if (records.length === 0) {
       console.warn(`Order ${orderId} not found in Airtable for update`);
@@ -190,12 +190,12 @@ export async function setOrderDecision(orderId: string, decision: 'confirm' | 'r
   }
 }
 
-export async function getOrderFromAirtable(orderId: string): Promise<OrderRecord | null> {
+export async function getOrderFromAirtable(orderId: string, useCache = true): Promise<OrderRecord | null> {
   try {
     const records = await airtableSafe(`order-${orderId}`, () => base('Orders').select({
       filterByFormula: `{OrderID} = '${orderId}'`,
       maxRecords: 1
-    }).firstPage());
+    }).firstPage(), 3, useCache);
 
     if (records.length === 0) return null;
 
